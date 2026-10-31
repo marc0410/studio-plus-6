@@ -1,0 +1,31 @@
+/* Search field: a rounded glass control with a restrained red focus cue. */
+.file-search-bar{
+  height:66px;
+  gap:17px;
+  padding:0 14px 0 22px;
+  border:1px solid rgba(255,246,235,.34);
+  border-radius:19px;
+  background:linear-gradient(110deg,rgba(52,40,33,.84),rgba(31,24,21,.76));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13),inset 0 0 0 1px rgba(255,255,255,.025),0 18px 46px rgba(0,0,0,.34);
+  backdrop-filter:blur(22px) saturate(115%);
+  -webkit-backdrop-filter:blur(22px) saturate(115%);
+  transition:border-color .22s ease,box-shadow .22s ease,background .22s ease;
+}
+.file-search-bar:focus-within{
+  border-color:rgba(235,6,6,.72);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 0 0 3px rgba(235,6,6,.12),0 20px 52px rgba(0,0,0,.42);
+}
+.file-search-icon{flex-basis:20px;width:20px;height:20px;opacity:.92}
+.file-search-bar input{font-size:15px;letter-spacing:.005em}
+.file-search-thumb{width:38px;height:38px;border-radius:9px;border-color:rgba(255,255,255,.72);box-shadow:0 3px 10px rgba(0,0,0,.28)}
+.file-search-enter{width:38px;height:38px;border:1px solid rgba(255,255,255,.24);border-radius:10px;background:linear-gradient(145deg,#f2764d,#df5132);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.22);font-size:22px}
+.file-search-enter[aria-label]{font-size:0}
+.file-search-enter[aria-label]:after{content:"↵";font-size:22px;line-height:1}
+
+
+@media(max-width:760px){
+  .file-search-bar{height:56px;padding:0 10px 0 15px;gap:11px;border-radius:16px}
+  .file-search-bar input{font-size:13px}
+  .file-search-thumb,.file-search-enter{width:34px;height:34px;border-radius:8px}
+}
+@media(prefers-reduced-motion:reduce){.file-search-bar{transition:none}}

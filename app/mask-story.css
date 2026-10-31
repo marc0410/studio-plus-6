@@ -1,0 +1,99 @@
+.home-page .mask-story {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: #101010;
+  color: var(--paper);
+}
+
+.home-page .mask-story::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 63px, #ffffff08 64px);
+}
+
+.home-page .mask-story-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 930px;
+  padding: clamp(75px, 9vw, 130px) var(--gutter) 65px;
+}
+
+.home-page .mask-story-heading,
+.home-page .mask-story-statements,
+.home-page .mask-story-bottom {
+  width: 100%;
+  max-width: 1390px;
+  margin-inline: auto;
+}
+
+.home-page .mask-story-heading,
+.home-page .mask-story-row-meta,
+.home-page .mask-story-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.home-page .mask-story-hint,
+.home-page .mask-story-row-meta {
+  font-size: 10px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.home-page .mask-story-hint { color: #96918e; }
+.home-page .mask-story-statements { flex: 1; display: grid; grid-template-rows: 1fr 1fr; margin-top: 55px; }
+.home-page .mask-story-row { display: flex; flex-direction: column; justify-content: center; min-height: 280px; border-top: 1px solid #ffffff2a; }
+.home-page .mask-story-row-meta { color: #a9a29e; margin-bottom: 28px; }
+.home-page .mask-story-row-meta span:last-child { text-align: right; }
+.home-page .mask-story-title { max-width: 1250px; font-size: clamp(64px, 9.8vw, 154px); line-height: .95; letter-spacing: -.085em; font-weight: 500; text-wrap: balance; }
+.home-page .mask-story-bottom { border-top: 1px solid #ffffff2a; padding-top: 22px; }
+.home-page .mask-story-bottom p { max-width: 490px; color: #b0aaa6; font-size: 13px; }
+.home-page .mask-story-link { display: inline-flex; align-items: center; gap: 38px; border-bottom: 1px solid currentColor; padding: 10px 0; font-size: 12px; white-space: nowrap; transition: gap .25s, color .25s; }
+.home-page .mask-story-link:hover { gap: 48px; color: #fff; }
+.home-page .mask-story-mobile-reveal,
+.home-page .mask-story-mobile-note { display: none; }
+
+.home-page .mask-story-reveal {
+  --mask-x: 0px;
+  --mask-y: 0px;
+  --mask-size: 0px;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--red);
+  color: #140a0a;
+  -webkit-mask-image: radial-gradient(circle at var(--mask-x) var(--mask-y), #000 var(--mask-size), transparent calc(var(--mask-size) + 1px));
+  mask-image: radial-gradient(circle at var(--mask-x) var(--mask-y), #000 var(--mask-size), transparent calc(var(--mask-size) + 1px));
+}
+
+.home-page .mask-story-reveal .section-index,
+.home-page .mask-story-reveal .mask-story-hint,
+.home-page .mask-story-reveal .mask-story-row-meta,
+.home-page .mask-story-reveal .mask-story-bottom p { color: #230b0b; }
+.home-page .mask-story-reveal .mask-story-row,
+.home-page .mask-story-reveal .mask-story-bottom { border-color: #25090955; }
+
+@media (max-width: 900px), (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .home-page .mask-story-reveal { display: none; }
+  .home-page .mask-story-hint { display: none; }
+  .home-page .mask-story-mobile-reveal { display: block; margin-top: 14px; color: var(--red); font-size: clamp(23px, 4.5vw, 42px); line-height: 1.16; letter-spacing: -.045em; font-weight: 500; }
+  .home-page .mask-story-mobile-note { display: block; position: relative; margin: -34px var(--gutter) 60px; color: #777; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+}
+
+@media (max-width: 620px) {
+  .home-page .mask-story-content { min-height: 0; padding: 85px var(--gutter) 65px; }
+  .home-page .mask-story-statements { margin-top: 40px; }
+  .home-page .mask-story-row { min-height: 290px; }
+  .home-page .mask-story-title { font-size: clamp(56px, 13vw, 78px); }
+  .home-page .mask-story-row-meta { font-size: 9px; letter-spacing: .08em; }
+  .home-page .mask-story-row-meta span:last-child { max-width: 120px; }
+  .home-page .mask-story-bottom { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .home-page .mask-story-link { white-space: normal; }
+}

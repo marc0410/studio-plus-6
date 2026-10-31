@@ -1,0 +1,45 @@
+.home-page .orbit-section{position:relative;overflow:hidden;min-height:950px;padding:clamp(100px,12vw,165px) var(--gutter) 80px;background:#0b0b0b;color:#fff;isolation:isolate}
+.home-page .orbit-section:before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 50% 60%,#3e111144,transparent 49%),linear-gradient(90deg,#ffffff07 1px,transparent 1px);background-size:auto,20vw 100%}
+.home-page .orbit-heading{display:flex;justify-content:space-between;align-items:end;gap:35px;max-width:1450px;margin:0 auto}
+.home-page .orbit-heading h2{margin-top:20px;font-size:clamp(50px,6.5vw,94px)}
+.home-page .orbit-heading p{max-width:275px;color:#aaa;font-size:13px}
+.home-page .orbit-stage{position:relative;display:grid;place-items:center;height:550px;max-width:1450px;margin:0 auto;perspective:1700px;touch-action:pan-y;cursor:grab;user-select:none}
+.home-page .orbit-stage:active{cursor:grabbing}
+.home-page .orbit-ring{position:relative;width:340px;height:390px;transform-style:preserve-3d;will-change:transform}
+.home-page .orbit-card{position:absolute;inset:0;overflow:hidden;background:#1c1c1c;backface-visibility:hidden;box-shadow:0 25px 70px #0009;border:1px solid #ffffff29}
+.home-page .orbit-card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0008,transparent 35%,transparent 55%,#000a);pointer-events:none}
+.home-page .orbit-card img{width:100%;height:100%;object-fit:cover;pointer-events:none}
+.home-page .orbit-card>span,.home-page .orbit-card>strong{position:absolute;z-index:1;left:18px;color:#fff}
+.home-page .orbit-card>span{top:18px;font-size:9px;letter-spacing:.15em}
+.home-page .orbit-card>strong{bottom:20px;font-weight:500;letter-spacing:-.05em;font-size:30px}
+.home-page .orbit-vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#0b0b0b 0%,transparent 20%,transparent 80%,#0b0b0b 100%)}
+.home-page .orbit-controls{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;gap:25px;max-width:1450px;margin:0 auto;border-top:1px solid #ffffff30;padding-top:23px}
+.home-page .orbit-caption>span{color:#888;font-size:9px;letter-spacing:.16em;text-transform:uppercase}
+.home-page .orbit-caption h3{font-size:clamp(27px,3vw,43px);margin-top:6px}
+.home-page .orbit-buttons{display:flex;align-items:center;justify-content:center;gap:18px}
+.home-page .orbit-buttons button{width:46px;height:46px;border:1px solid #ffffff50;border-radius:50%;background:transparent;color:#fff;font-size:22px;transition:background .25s,transform .25s}
+.home-page .orbit-buttons button:hover{background:var(--red);transform:scale(1.06)}
+.home-page .orbit-buttons>span{color:#777;font-size:9px;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.home-page .orbit-controls>.text-link{justify-self:end;color:#ddd;border-color:#777}
+
+
+@media(max-width:900px){
+  .home-page .orbit-section{min-height:0;padding-bottom:80px}
+  .home-page .orbit-heading{display:block}
+  .home-page .orbit-heading p{margin-top:20px}
+  .home-page .orbit-stage{display:block;place-items:normal;perspective:none;height:auto;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding-left:var(--gutter);touch-action:pan-y;cursor:auto;margin:45px calc(-1 * var(--gutter)) 25px;padding:0 var(--gutter);scrollbar-width:thin;scrollbar-color:var(--red) #ffffff25}
+  .home-page .orbit-ring{display:flex;gap:16px;width:max-content;height:auto;transform:none!important;will-change:auto;padding-bottom:20px}
+  .home-page .orbit-card{position:relative;inset:auto;flex:0 0 72vw;width:72vw;height:75vw;max-height:500px;transform:none!important;scroll-snap-align:start}
+  .home-page .orbit-vignette{display:none}
+  .home-page .orbit-controls{grid-template-columns:1fr auto}
+  .home-page .orbit-buttons{display:none}
+}
+@media(max-width:620px){
+  .home-page .orbit-heading h2{font-size:clamp(45px,11vw,65px)}
+  .home-page .orbit-card{width:78vw;flex-basis:78vw;height:95vw}
+  .home-page .orbit-controls{display:flex;justify-content:space-between;gap:18px}
+  .home-page .orbit-caption{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-page .orbit-stage{cursor:auto}
+}

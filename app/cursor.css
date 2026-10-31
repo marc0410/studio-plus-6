@@ -1,0 +1,14 @@
+.site-cursor{position:fixed;top:0;left:0;z-index:9999;width:22px;height:22px;translate:-50% -50%;transform:translate3d(-100px,-100px,0);border:1.5px solid var(--red);border-radius:50%;background:transparent;pointer-events:none;opacity:0;display:grid;place-items:center;color:#fff;transition:width .25s,height .25s,border-radius .25s,background .25s,opacity .18s;will-change:transform}
+.site-cursor:before{content:"";width:4px;height:4px;border-radius:50%;background:var(--red);position:absolute}
+.site-cursor>span{opacity:0;font-size:8px;font-weight:700;letter-spacing:.12em}
+html.has-custom-cursor .site-cursor.is-visible{opacity:1}
+html.has-custom-cursor .site-cursor.is-interactive{width:46px;height:46px;background:#eb060622}
+html.has-custom-cursor .site-cursor.is-text{width:2px;height:25px;border:0;border-radius:0;background:var(--red)}
+html.has-custom-cursor .site-cursor.is-text:before{display:none}
+html.has-custom-cursor .site-cursor.is-drag{width:74px;height:74px;border-color:var(--red);background:var(--red)}
+html.has-custom-cursor .site-cursor.is-drag:before{display:none}
+html.has-custom-cursor .site-cursor.is-drag>span{opacity:1}
+html.has-custom-cursor .site-cursor.is-down:not(.is-text){width:18px;height:18px}
+html.has-custom-cursor .site-cursor.is-drag.is-down{width:67px;height:67px}
+@media(hover:hover) and (pointer:fine){html.has-custom-cursor,html.has-custom-cursor *{cursor:none!important}}
+@media(hover:none),(pointer:coarse){.site-cursor{display:none}}
