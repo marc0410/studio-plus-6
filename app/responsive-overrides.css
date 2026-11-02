@@ -1,0 +1,158 @@
+/* Shared viewport and content sizing for narrow screens. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
+@media (max-width: 760px) {
+  :root { --gutter: clamp(18px, 5vw, 32px); }
+
+  .site-header {
+    height: 76px;
+    gap: 12px;
+  }
+
+  .site-nav,
+  .site-account { display: none; }
+
+  .mobile-navigation { display: block; }
+  .mobile-navigation nav { top: 100%; }
+  .mobile-navigation summary::-webkit-details-marker { display: none; }
+
+  .site-actions { gap: 10px; }
+  .site-actions > .button { min-height: 42px; padding-inline: 13px; }
+
+  .section { padding-inline: var(--gutter); }
+  .section-heading { align-items: start; }
+  .section-heading h2 { font-size: clamp(42px, 9vw, 66px); }
+
+  .intro,
+  .studio-tour,
+  .service-layout,
+  .post-scene,
+  .brief-section,
+  .faq-section,
+  .end-scene { grid-template-columns: minmax(0, 1fr); gap: 30px; }
+
+  .intro-image,
+  .service-photo,
+  .post-photo,
+  .end-scene-media { height: min(92vw, 520px); }
+
+  .viewfinder { min-height: 0; aspect-ratio: 1.15; }
+  .light-controls { grid-column: 1; margin-top: -20px; }
+  .pricing-cards,
+  .project-grid { grid-template-columns: minmax(0, 1fr); }
+  .price-card.featured { transform: none; }
+  .process-grid { grid-template-columns: minmax(0, 1fr); }
+  .quiz-options { grid-template-columns: minmax(0, 1fr); }
+
+  .booking-page,
+  .workspace-page { padding: 108px var(--gutter) 56px; }
+  .booking-grid,
+  .workspace-grid { grid-template-columns: minmax(0, 1fr); }
+  .booking-summary { position: static; }
+  .workspace-nav { display: flex; overflow-x: auto; }
+  .workspace-nav > * { flex: 0 0 auto; }
+  .data-table { display: block; overflow-x: auto; white-space: nowrap; }
+
+  .footer-top { min-height: 0; display: grid; gap: 32px; }
+  .footer-cta { min-width: 0; width: 100%; font-size: clamp(48px, 11vw, 78px); }
+  .footer-bottom { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 18px 24px; }
+  .footer-links { order: 3; width: 100%; flex-wrap: wrap; }
+  .footer-meta { margin-left: auto; }
+}
+
+@media (max-width: 620px) {
+  .hero {
+    height: auto;
+    min-height: 0;
+    padding: 112px var(--gutter) 34px;
+    align-items: initial;
+  }
+
+  .hero-image { object-position: 68% center; opacity: .48; filter: brightness(.62) saturate(.72); }
+  .hero-inner.hero-copy { width: 100%; }
+  .hero-kicker { max-width: 29ch; margin-bottom: 20px; font-size: 8px; }
+  .hero h1 { font-size: clamp(54px, 13vw, 76px); line-height: .99; }
+  .hero-description { max-width: 29ch; margin-top: 17px; font-size: 12px; }
+  .hero-actions { margin-top: 14px; }
+  .hero-discover { gap: 20px; font-size: 11px; }
+  .hero-tag { display: none; }
+  .hero-tag { display: none; }
+  .hero-stamp { position: relative; right: auto; bottom: auto; left: auto; margin: 44px 0 0 auto; }
+  .hero-bottom { position: relative; inset: auto; margin-top: 48px; gap: 10px; font-size: 7px; }
+  .hero-bottom > span:nth-child(2),
+  .hero-wave { display: none; }
+
+  .section { padding-block: 76px; }
+  .section-heading { margin-bottom: 30px; }
+  .intro-image,
+  .service-photo,
+  .post-photo,
+  .end-scene-media { height: min(100vw, 420px); }
+  .tour-copy h2 { font-size: clamp(42px, 12vw, 60px); }
+  .viewfinder { aspect-ratio: 1 / 1.05; }
+  .light-controls { max-width: 100%; flex-wrap: wrap; justify-self: start; }
+  .light-controls button { padding: 10px 8px; }
+
+  .project-grid { gap: 24px; }
+  .project-caption p { font-size: 17px; }
+  .pricing-cards { gap: 14px; }
+  .price-body { padding: 20px; }
+  .faq-title { position: static; }
+  .faq-list summary { gap: 16px; font-size: 16px; }
+  .quiz { padding: 20px; }
+  .quiz-options button { min-height: 58px; }
+  .booking-panel,
+  .booking-summary { padding: 18px; }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .form-grid .wide { grid-column: auto; }
+  .calendar-grid button { min-height: 38px; }
+  .time-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .table-showcase { min-height: max(100svh, 690px); }
+  .table-topline { left: var(--gutter); right: var(--gutter); }
+  .table-topline > a { max-width: 38%; text-align: right; }
+  .table-copy { width: 88vw; }
+  .table-copy h2 { font-size: clamp(42px, 11vw, 60px); }
+  .table-bottomline { left: var(--gutter); right: var(--gutter); }
+  .showcase-dock { max-width: calc(100vw - 24px); overflow-x: auto; }
+  .showcase-dock-item { padding: 9px 8px; }
+
+  .file-modal-overlay { padding: 12px; }
+  .file-modal-panel { width: 100%; max-height: 92dvh; padding: 14px; }
+  .file-modal-media { min-height: 180px; }
+  .file-modal-document { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  .file-modal-document img { max-height: 30vh; }
+}
+
+@media (max-width: 380px) {
+  .site-logo img { width: 100px; }
+  .site-actions > .button { min-height: 38px; padding-inline: 9px; }
+  .menu-button { padding: 10px; }
+  .hero h1 { font-size: 52px; }
+  .hero-stamp { bottom: 67px; }
+  .table-brand i { display: none; }
+  .footer-cta { font-size: 46px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* Shared rounded action language across pages and sections. */
+.button,
+.table-cta,
+.showcase-finalcut-cta,
+.showcase-skip,
+.hero-stamp,
+.text-link,
+.filters button,
+.mobile-navigation .menu-button,
+.file-search-enter {
+  border-radius: 999px;
+}

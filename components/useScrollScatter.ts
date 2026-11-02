@@ -10,11 +10,15 @@ import { setScrollRuntime } from './scrollRuntime';
 export function useScrollScatter(section: RefObject<HTMLElement | null>, reducedMotion: boolean, extendSearchStage: (timeline: gsap.core.Timeline, root: HTMLElement) => void) {
   useEffect(() => {
     const root = section.current;
-    if (!root || reducedMotion) return;
+    // Touch devices keep the browser's native vertical scroll. Lenis + a
+    // pinned 100dvh scene is useful on desktop, but it creates competing
+    // scroll containers on small screens and can swallow diagonal swipes.
+    const touchLayout = window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+    if (!root || reducedMotion || touchLayout) return;
     gsap.registerPlugin(ScrollTrigger);
     // Keep wheel response direct; a long Lenis duration combined with a scrubbed
     // pinned timeline makes the whole page feel as if it is dragging behind.
-    const lenis = new Lenis({ duration: 0.78, smoothWheel: true });
+    const lenis = new Lenis({ duration: 0.55, smoothWheel: true });
     // The Hero snap controller pauses this same Lenis instance while it owns
     // the wheel, then resumes it once the pinned Showcase is reached.
     setScrollRuntime(lenis);
@@ -37,7 +41,7 @@ export function useScrollScatter(section: RefObject<HTMLElement | null>, reduced
           // The five scene stops share one pin. Adjust the duration in showcase-tokens.ts.
           end: () => window.innerWidth < 700 ? showcaseTokens.motion.mobilePinDistance : showcaseTokens.motion.pinDistance,
           pin: true,
-          scrub: 0.45,
+          scrub: 0.2,
           invalidateOnRefresh: true,
         },
       });

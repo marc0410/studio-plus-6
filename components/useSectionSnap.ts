@@ -9,14 +9,11 @@ import type Lenis from 'lenis';
 import { showcaseTokens } from '@/data/showcase-tokens';
 import { getScrollRuntime, subscribeScrollRuntime } from './scrollRuntime';
 
-// Tuning knobs: the Hero/Showcase handoff can be switched off independently;
-// mobile keeps the same boundary gesture, with a larger swipe threshold.
+// The Hero/Showcase handoff is only used with wheel and keyboard input.
 const SNAP_ENABLED = true;
-const MOBILE_MODE: 'observer' | 'natural' = 'observer';
 const DURATION = 1.1;
 const EASE = 'power3.inOut';
 const TOLERANCE = 12;
-const MOBILE_TOLERANCE = 40;
 const COOLDOWN_MS = 200;
 const SAFETY_LOCK_MS = 2000;
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
@@ -41,7 +38,9 @@ export function useSectionSnap({ sections, onEnter, onLeave }: SectionSnapOption
   useEffect(() => {
     const media = window.matchMedia(REDUCED_MOTION);
     const mobile = window.matchMedia('(max-width: 700px)').matches;
-    if (!SNAP_ENABLED || media.matches || (mobile && MOBILE_MODE === 'natural')) return;
+    // Keep touch scrolling native. Observer + Lenis scroll locking at a pinned
+    // boundary can swallow short reverse swipes on mobile browsers.
+    if (!SNAP_ENABLED || media.matches || mobile) return;
 
     gsap.registerPlugin(Observer, ScrollToPlugin, ScrollTrigger);
     const hero = document.querySelector<HTMLElement>(sections.hero);
@@ -176,22 +175,22 @@ export function useSectionSnap({ sections, onEnter, onLeave }: SectionSnapOption
       target: window,
       type: 'wheel,touch',
       wheelSpeed: -1,
-      tolerance: mobile ? MOBILE_TOLERANCE : TOLERANCE,
+      tolerance: TOLERANCE,
       preventDefault: true,
       ignoreCheck: (event) => isIgnored(event.target),
       onUp: (self) => {
         if (isIgnored(self.event?.target)) return;
         if (state.current === 'hero') transition('showcase');
-        else if (state.current === 'showcase-top') transition('hero');
-      },
-      onDown: (self) => {
-        if (isIgnored(self.event?.target)) return;
-        if (state.current === 'showcase-top') {
+        else if (state.current === 'showcase-top') {
           state.current = 'showcase-free';
           observer?.disable();
           runtime.lenis?.start();
           runtime.lenis?.scrollTo(window.scrollY + 120, { duration: 0.3 });
         }
+      },
+      onDown: (self) => {
+        if (isIgnored(self.event?.target)) return;
+        if (state.current === 'showcase-top') transition('hero');
       },
     });
     if (state.current === 'showcase-free') observer.disable();
@@ -199,7 +198,7 @@ export function useSectionSnap({ sections, onEnter, onLeave }: SectionSnapOption
     boundary = ScrollTrigger.create({
       trigger: showcase,
       start: 'top top',
-      end: () => `+=${window.innerWidth < 700 ? showcaseTokens.motion.mobilePinDistance : showcaseTokens.motion.pinDistance}`,
+      end: () => window.innerWidth < 700 ? showcaseTokens.motion.mobilePinDistance : showcaseTokens.motion.pinDistance,
       onUpdate: (self) => {
         if (self.progress <= 0.001 && self.direction < 0 && state.current === 'showcase-free') {
           state.current = 'showcase-top';

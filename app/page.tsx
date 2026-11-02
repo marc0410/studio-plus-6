@@ -4,12 +4,10 @@ import { PricingCards } from '@/components/PricingCards';
 import { SceneMotion } from '@/components/SceneMotion';
 import { StudioReel } from '@/components/StudioReel';
 import { Ink } from '@/components/handwriting/Ink';
-import { FullpageController } from '@/components/FullpageController';
 
 export default function Home() {
   return (
     <main id="contenu" className="home-page">
-      <FullpageController />
       <SceneMotion />
       <section id="hero" className="hero" aria-labelledby="hero-title" tabIndex={-1}>
         <Image className="hero-image" src="/studio/assets/hero-microphone.webp" alt="Microphone de studio éclairé d’un reflet rouge" fill priority sizes="100vw" />
@@ -26,7 +24,7 @@ export default function Home() {
 
       <StudioReel />
 
-      <section className="section pricing" id="tarifs" aria-labelledby="pricing-title" data-scene><div className="section-heading"><div><span className="section-index">Prestations</span><h2 id="pricing-title">À chaque projet<br /><Ink type="underline" trigger="enter" color="accent">son point de départ.</Ink></h2></div><p>Choisissez votre format. Nous confirmerons ensemble le contenu et le tarif de votre séance.</p></div><PricingCards /><div className="pricing-bottom"><p>Vous avez une idée qui sort du cadre ?</p><Link className="text-link" href="/reserver">Parlons de votre projet <span aria-hidden="true">↗</span></Link></div></section>
+      <section className="section pricing" id="tarifs" aria-labelledby="pricing-title" data-scene><div className="section-heading"><div><span className="section-index">Prestations</span><h2 id="pricing-title">À chaque projet<br />son point de <Ink type="circle" trigger="enter" color="accent">départ.</Ink></h2></div><p>Choisissez votre format. Nous confirmerons ensemble le contenu et le tarif de votre séance.</p></div><PricingCards /><div className="pricing-bottom"><p>Vous avez une idée qui sort du cadre ?</p><Link className="text-link" href="/reserver">Parlons de votre projet <span aria-hidden="true">↗</span></Link></div></section>
 
       <Faq />
 
