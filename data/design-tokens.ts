@@ -37,7 +37,7 @@ export const showcaseStagePlan: Array<{ id: ShowcaseStage; label: string; durati
 
 
 /** Temporarily hidden from the Showcase navigation; their panels remain in the source for later reuse. */
-export const pausedShowcaseStages: ShowcaseStage[] = ['studio', 'craft'];
+export const pausedShowcaseStages: ShowcaseStage[] = ['studio', 'craft', 'moments'];
 
 export function getVisibleShowcaseStages() {
   return showcaseStagePlan.filter(({ id }) => !pausedShowcaseStages.includes(id));

@@ -29,7 +29,7 @@ export function useShowcaseTimeline(onReadyChange: (ready: boolean) => void, onS
     search(timeline, root);
     if (!pausedShowcaseStages.includes('studio')) studio(timeline, root);
     if (!pausedShowcaseStages.includes('craft')) craft(timeline, root);
-    moments(timeline, root);
+    if (!pausedShowcaseStages.includes('moments')) moments(timeline, root);
     finalCut(timeline, root);
 
     const surface = root.querySelector<HTMLElement>('.table-surface');

@@ -1,16 +1,170 @@
-'use client';
-import {useCallback,useEffect,useState,type FormEvent} from 'react';import Link from 'next/link';
-import {Ink} from '@/components/handwriting/Ink';
-type Person={id:string;name:string;email:string;role:string};type Booking={id:string;service:string;title:string;date:string;time:string;duration:number;amount:number|null;status:'requested'|'confirmed'|'cancelled';name:string;email:string;phone:string;notes:string;canManage:boolean;participants:Person[]};type User={id:string;name:string;email:string;admin:boolean};type Service={id:string;name:string;duration:number;price:number|null};type Config={services:Service[];open:number;close:number;closedDays:number[];scheduleVerified:boolean};type Data={me:User|null;bookings:Booking[];config:Config};
-const emptyConfig:Config={services:[],open:9,close:18,closedDays:[0],scheduleVerified:false};const fmt=(n:number|null)=>n==null?'À confirmer':`${new Intl.NumberFormat('fr-FR').format(n)} FCFA`;const dateLabel=(s:string)=>new Date(`${s}T12:00:00Z`).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Abidjan'});
-export function Workspace(){const [data,setData]=useState<Data|null>(null),[error,setError]=useState(''),[selected,setSelected]=useState(''),[selectedDate,setSelectedDate]=useState(''),[view,setView]=useState<'agenda'|'settings'>('agenda'),[busy,setBusy]=useState(false),[feedback,setFeedback]=useState('');const load=useCallback(async()=>{try{const r=await fetch('/api/studio',{cache:'no-store'}),d=await r.json();if(!r.ok)throw Error(d.error);setData(d);setError('')}catch(e){setError(e instanceof Error?e.message:'Impossible de charger votre espace.')}},[]);useEffect(()=>{load()},[load]);async function mutate(body:Record<string,unknown>,method='POST'){setBusy(true);setFeedback('');try{const r=await fetch('/api/studio',{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json();if(!r.ok)throw Error(d.error);await load();setFeedback(d.message||'Modifications enregistrées.')}catch(e){setFeedback(e instanceof Error?e.message:'La modification a échoué.')}finally{setBusy(false)}}
-if(!data)return <main id="contenu" className="workspace-page"><p>{error||'Ouverture de votre espace Studio+…'}</p>{error&&<button className="button" onClick={load}>Réessayer</button>}</main>;
-if(!data.me)return <main id="contenu" className="workspace-page"><section className="workspace-card"><div className="eyebrow"><i/>Mon espace créatif</div><h1 style={{fontSize:54,margin:'22px 0'}}>Presque au <Ink type="underline" trigger="enter" color="accent">studio.</Ink></h1><p>Connectez-vous pour retrouver vos réservations, vos participants et vos séances.</p><Link className="button" style={{marginTop:25}} href={`/connexion?return_to=${encodeURIComponent('/espace')}`}>Se connecter ↗</Link></section></main>;
-const bookings=data.bookings;const visibleBookings=selectedDate?bookings.filter(b=>b.date===selectedDate):bookings;const upcoming=bookings.filter(b=>b.status!=='cancelled'&&b.date>=new Date().toISOString().slice(0,10));const current=bookings.find(b=>b.id===selected);const serviceName=(id:string)=>data.config.services.find(s=>s.id===id)?.name||id;
-function exportCalendar(b:Booking){const escape=(v:string)=>v.replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');const start=Date.parse(`${b.date}T${b.time}:00Z`);const stamp=(n:number)=>new Date(n).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z/,'Z');const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Studio Plus//Calendrier//FR','CALSCALE:GREGORIAN','BEGIN:VEVENT',`UID:${b.id}@studio-plus`,`DTSTAMP:${stamp(Date.now())}`,`DTSTART:${stamp(start)}`,`DTEND:${stamp(start+b.duration*60000)}`,`SUMMARY:${escape(b.title)}`,'LOCATION:Studio Plus, Cocody Angré',`DESCRIPTION:${escape(`${serviceName(b.service)} · ${b.notes||''}`)}`,'END:VEVENT','END:VCALENDAR'].join('\r\n')+'\r\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines],{type:'text/calendar'}));a.download=`studio-plus-${b.date}.ics`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000)}
-return <main id="contenu" className="workspace-page"><div className="workspace-grid"><nav className="workspace-nav" aria-label="Navigation espace client"><Link href="/">← Retour au site</Link><button onClick={()=>setView('agenda')}>Calendrier & séances</button>{data.me.admin&&<button onClick={()=>setView('settings')}>Tarifs & horaires</button>}<Link href="/deconnexion">Se déconnecter</Link></nav><section className="workspace-main"><div className="eyebrow"><i/>{data.me.admin?'Administration du studio':'Mon espace créatif'}</div><h1 style={{fontSize:'clamp(38px,5vw,62px)',margin:'16px 0 8px'}}>Bonjour <Ink type="underline" trigger="enter" color="accent">{data.me.name.split(' ')[0]}.</Ink></h1><p style={{color:'#777'}}>Vos séances, vos invités et la suite de votre projet.</p>{feedback&&<p className="status" role="status">{feedback}</p>}{view==='settings'&&data.me.admin?<Settings config={data.config} onSave={async config=>mutate({action:'config',config},'PATCH')}/>:<><div className="stat-grid"><div className="stat">Séances à venir<strong>{upcoming.length}</strong></div><div className="stat">À confirmer<strong>{bookings.filter(b=>b.status==='requested').length}</strong></div><div className="stat">Participants<strong>{bookings.reduce((n,b)=>n+b.participants.length,0)}</strong></div></div><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:'28px 0 15px'}}><h2 style={{fontSize:28}}>Vos séances</h2><Link className="button" href="/reserver">Nouvelle séance ↗</Link></div><MonthCalendar bookings={bookings} selected={selectedDate} onSelect={setSelectedDate}/>{bookings.length===0?<section className="workspace-card"><p>Aucune séance pour le moment. Votre prochaine idée peut commencer ici.</p><Link href="/reserver" className="button" style={{marginTop:18}}>Réserver le studio ↗</Link></section>:<div className="data-table-wrap"><table className="data-table"><thead><tr><th>Projet</th><th>Créneau</th><th>Prestation</th><th>Montant</th><th>État</th></tr></thead><tbody>{visibleBookings.map(b=><tr key={b.id} aria-selected={selected===b.id}><td><button className="table-row-button" type="button" onClick={()=>setSelected(selected===b.id?'':b.id)} aria-expanded={selected===b.id}>{b.title}</button><small style={{display:'block',color:'#888',marginTop:5}}>{b.name}</small></td><td>{dateLabel(b.date)}<small style={{display:'block',color:'#888',marginTop:5}}>{b.time} · {b.duration} min</small></td><td>{serviceName(b.service)}</td><td>{fmt(b.amount)}</td><td>{b.status==='requested'?'À confirmer':b.status==='confirmed'?'Confirmée':'Annulée'}</td></tr>)}</tbody></table></div>}{current&&<section className="workspace-card" style={{marginTop:18}}><div style={{display:'flex',justifyContent:'space-between',gap:20}}><div><h2 style={{fontSize:24}}>{current.title}</h2><p style={{fontSize:12,color:'#777',marginTop:8}}>{current.notes||'Aucune note ajoutée.'}</p></div><button aria-label="Fermer le détail" onClick={()=>setSelected('')}>×</button></div><h3 style={{fontSize:17,marginTop:24}}>Participants · {current.participants.length}</h3>{current.participants.map(p=><div key={p.id} style={{padding:'12px 0',borderBottom:'1px solid #eee',fontSize:12}}>{p.name} · {p.email} · {p.role}{(data.me?.admin||current.canManage)&&<button style={{marginLeft:12}} onClick={()=>mutate({action:'participant',id:p.id,bookingId:current.id},'DELETE')}>Retirer</button>}</div>)}{current.status!=='cancelled'&&(current.canManage||data.me.admin)&&<ParticipantForm bookingId={current.id} onSubmit={v=>mutate({action:'participant',bookingId:current.id,...v})}/>}<div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:20}}><button className="button ghost" onClick={()=>exportCalendar(current)}>Télécharger l’invitation .ics</button>{data.me.admin&&current.status==='requested'&&<ConfirmForm onSubmit={amount=>mutate({action:'booking',id:current.id,status:'confirmed',amount},'PATCH')}/>}{current.status!=='cancelled'&&(current.canManage||data.me.admin)&&<button className="button ghost" disabled={busy} onClick={()=>mutate({action:'booking',id:current.id,status:'cancelled'},'PATCH')}>Annuler la séance</button>}</div></section>}</>}</section></div></main>}
-function ParticipantForm({bookingId,onSubmit}:{bookingId:string;onSubmit:(v:{name:string;email:string;role:string})=>void}){const [open,setOpen]=useState(false);function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);onSubmit({name:String(f.get('name')),email:String(f.get('email')),role:String(f.get('role'))});e.currentTarget.reset();setOpen(false)}return <div style={{marginTop:18}}>{open?<form onSubmit={submit} className="form-grid"><label>Nom<input name="name" required minLength={2}/></label><label>E-mail<input name="email" type="email" required/></label><label>Rôle<select name="role"><option>Invité</option><option>Co-intervenant</option><option>Technicien</option></select></label><button className="button">Ajouter</button></form>:<button className="button ghost" type="button" onClick={()=>setOpen(true)}>+ Ajouter un participant</button>}</div>}
-function ConfirmForm({onSubmit}:{onSubmit:(amount:number)=>void}){const [amount,setAmount]=useState('');return <form onSubmit={e=>{e.preventDefault();if(Number.isSafeInteger(Number(amount)))onSubmit(Number(amount))}} style={{display:'flex',gap:5}}><input aria-label="Montant validé en FCFA" type="number" min="0" required value={amount} onChange={e=>setAmount(e.target.value)} placeholder="Montant FCFA"/><button className="button">Confirmer</button></form>}
-function Settings({config,onSave}:{config:Config;onSave:(config:Config)=>void}){const [values,setValues]=useState(config);useEffect(()=>setValues(config),[config]);const weekdays=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];return <form className="workspace-card" onSubmit={e=>{e.preventDefault();onSave(values)}}><h2 style={{fontSize:25,marginBottom:20}}>Tarifs & horaires</h2>{values.services.map((s,i)=><div key={s.id} className="form-grid" style={{padding:'14px 0',borderTop:'1px solid #eee'}}><strong>{s.name}</strong><label>Tarif FCFA<input type="number" min="0" value={s.price??''} onChange={e=>setValues({...values,services:values.services.map((x,j)=>j===i?{...x,price:e.target.value===''?null:Number(e.target.value)}:x)})}/></label><label>Durée en minutes<input type="number" min="30" step="30" value={s.duration} onChange={e=>setValues({...values,services:values.services.map((x,j)=>j===i?{...x,duration:Number(e.target.value)}:x)})}/></label></div>)}<div className="form-grid"><label>Ouverture<input type="number" min="0" max="23.5" step="0.5" value={values.open} onChange={e=>setValues({...values,open:Number(e.target.value)})}/></label><label>Fermeture<input type="number" min="0.5" max="24" step="0.5" value={values.close} onChange={e=>setValues({...values,close:Number(e.target.value)})}/></label><label className="wide"><input type="checkbox" checked={values.scheduleVerified} onChange={e=>setValues({...values,scheduleVerified:e.target.checked})}/> Horaires vérifiés auprès du studio</label></div><fieldset className="closed-days"><legend>Jours de fermeture</legend>{weekdays.map((name,day)=><label key={name}><input type="checkbox" checked={values.closedDays.includes(day)} onChange={e=>setValues({...values,closedDays:e.target.checked?[...values.closedDays,day]:values.closedDays.filter(value=>value!==day)})}/>{name}</label>)}</fieldset><button className="button" style={{marginTop:20}}>Enregistrer les réglages ↗</button></form>}
+"use client";
 
-function MonthCalendar({bookings,selected,onSelect}:{bookings:Booking[];selected:string;onSelect:(date:string)=>void}){const [month,setMonth]=useState(()=>new Date());const year=month.getFullYear(),monthIndex=month.getMonth(),offset=(new Date(year,monthIndex,1).getDay()+6)%7,last=new Date(year,monthIndex+1,0).getDate();const label=month.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});const days=Array.from({length:offset+last},(_,i)=>i<offset?null:i-offset+1);return <section className="workspace-card" style={{marginBottom:20}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><h2 style={{fontSize:22,textTransform:'capitalize'}}>{label}</h2><div><button aria-label="Mois précédent" onClick={()=>setMonth(new Date(year,monthIndex-1,1))}>←</button><button aria-label="Mois suivant" onClick={()=>setMonth(new Date(year,monthIndex+1,1))}>→</button><button onClick={()=>onSelect('')}>Tout afficher</button></div></div><div className="calendar-grid" role="group" aria-label={`Calendrier ${label}`}>{['L','M','M','J','V','S','D'].map((d,i)=><span key={`${d}${i}`} style={{textAlign:'center',fontSize:10,color:'#888'}}>{d}</span>)}{days.map((day,i)=>{if(!day)return <span key={`blank${i}`}/>;const date=`${year}-${String(monthIndex+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const count=bookings.filter(b=>b.date===date&&b.status!=='cancelled').length;return <button key={date} type="button" onClick={()=>onSelect(selected===date?'':date)} aria-pressed={selected===date} aria-label={`${date}${count?`, ${count} séance${count>1?'s':''}`:''}`}>{day}{count>0&&<small style={{display:'block',fontSize:8,color:'var(--red)'}}>● {count}</small>}</button>})}</div></section>}
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { Ink } from "@/components/handwriting/Ink";
+import { PortalError } from "@/components/PortalErrorState";
+import { PortalSkeleton } from "@/components/PortalStates";
+import styles from "@/components/Workspace.module.css";
+
+type Participant = { id: string; name: string; email: string; role: string };
+type Payment = { id: string; amount: number; method: string; paidAt: string };
+type Booking = {
+  id: string; service: string; title: string; date: string; time: string;
+  duration: number; amount: number | null; amountPaid: number;
+  remainingAmount: number | null; payments: Payment[];
+  status: "requested" | "confirmed" | "in_progress" | "cancelled" | "completed" | "no_show";
+  name: string; email: string; phone: string; notes: string;
+  canManage: boolean; participants: Participant[];
+  project: { id: string } | null;
+  scheduleChanges: { id: string; oldDate: string; oldTime: string; newDate: string; newTime: string; status: string; createdAt: string }[];
+};
+type Bootstrap = {
+  me: null | { name: string; email: string; role: string };
+  bookings: Booking[];
+  config: { services: { id: string; name: string }[] };
+};
+
+const money = (value: number | null) => value === null ? "À confirmer" : `${new Intl.NumberFormat("fr-FR").format(value)} FCFA`;
+const paymentNames: Record<string, string> = { CASH: "Espèces", WAVE: "Wave", ORANGE_MONEY: "Orange Money", MTN_MOMO: "MTN MoMo", BANK_TRANSFER: "Virement", OTHER: "Autre" };
+const statusNames: Record<Booking["status"], string> = { requested: "En attente de confirmation", confirmed: "Confirmée", in_progress: "En cours", cancelled: "Annulée", completed: "Terminée", no_show: "Absence constatée" };
+
+export function Workspace() {
+  const [data, setData] = useState<Bootstrap | null>(null);
+  const [error, setError] = useState("");
+  const [selectedId, setSelectedId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState("");
+
+  const load = useCallback(async () => {
+    setError("");
+    try {
+      const response = await fetch("/api/bookings", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Impossible de charger votre espace.");
+      setData(result);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Impossible de charger votre espace.");
+    }
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  async function mutate(body: Record<string, unknown>, method = "POST") {
+    const bookingMutation = body.action === "booking" && typeof body.id === "string";
+    const invitationMutation = body.action === "participant" && typeof body.bookingId === "string";
+    if (!bookingMutation && !invitationMutation) return;
+    setBusy(true); setFeedback("");
+    try {
+      const endpoint = bookingMutation ? `/api/bookings/${body.id}` : `/api/bookings/${body.bookingId}/invitations`;
+      const payload = bookingMutation ? { status: body.status } : method === "DELETE" ? { participantId: body.id } : { name: body.name, email: body.email, role: body.role };
+      const response = await fetch(endpoint, { method: bookingMutation ? "PATCH" : method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "La modification a échoué.");
+      await load();
+      setFeedback(result.message || "Modifications enregistrées.");
+    } catch (caught) {
+      setFeedback(caught instanceof Error ? caught.message : "La modification a échoué.");
+    } finally { setBusy(false); }
+  }
+
+  if (!data) return error
+    ? <PortalError title={error} retry={() => void load()} />
+    : <main className="workspace-page"><div className="workspace-grid"><section className="workspace-main"><div className="eyebrow"><i />Mon espace créatif</div><h1>Préparons votre espace.</h1><PortalSkeleton rows={4} /></section></div></main>;
+
+  if (!data.me) return <main className="workspace-page"><div className="workspace-grid"><section className="workspace-card"><div className="eyebrow"><i />Mon espace créatif</div><h1>Presque au <Ink type="underline" trigger="enter" color="accent">studio.</Ink></h1><p>Connectez-vous pour retrouver vos réservations, vos participants et vos séances.</p><Link className="button" href={`/connexion?return_to=${encodeURIComponent("/espace")}`}>Se connecter ↗</Link></section></div></main>;
+
+  const bookings = data.bookings;
+  const selected = bookings.find(booking => booking.id === selectedId);
+  const upcoming = bookings.filter(booking => !["cancelled", "completed", "no_show"].includes(booking.status) && booking.date >= new Date().toISOString().slice(0, 10));
+  const serviceName = (id: string) => data.config.services.find(service => service.id === id)?.name ?? id;
+
+  return <main id="contenu" className="workspace-page"><div className="workspace-grid">
+    <nav className="workspace-nav" aria-label="Navigation espace client"><Link href="/">← Retour au site</Link><a href="#seances">Mes séances</a><Link href="/reserver">Réserver une séance</Link><Link href="/espace/parametres">Mon compte</Link><Link href="/deconnexion">Se déconnecter</Link></nav>
+    <section className="workspace-main">
+      <div className="eyebrow"><i />Mon espace créatif</div>
+      <h1>Bonjour <Ink type="underline" trigger="enter" color="accent">{data.me.name.split(" ")[0]}.</Ink></h1>
+      <p className="workspace-intro">Retrouvez vos séances, leur statut et le suivi de vos paiements sur place.</p>
+      {feedback && <p className="status" role="status">{feedback}</p>}
+      <div className="stat-grid"><div className="stat">Séances à venir<strong>{upcoming.length}</strong></div><div className="stat">À confirmer<strong>{bookings.filter(booking => booking.status === "requested").length}</strong></div><div className="stat">Participants<strong>{bookings.reduce((total, booking) => total + booking.participants.length, 0)}</strong></div></div>
+      <div id="seances" className="workspace-section-heading"><h2>Vos séances</h2><Link className="button" href="/reserver">Nouvelle séance ↗</Link></div>
+      {bookings.length === 0 ? <section className="workspace-card"><p>Aucune séance pour le moment. Votre prochaine idée peut commencer ici.</p><Link href="/reserver" className="button">Réserver le studio ↗</Link></section> : <div className="data-table-wrap"><table className="data-table"><thead><tr><th>Projet</th><th>Créneau</th><th>Prestation</th><th>Montant</th><th>État</th></tr></thead><tbody>{bookings.map(booking => <tr key={booking.id} aria-selected={selectedId === booking.id}>
+        <td><button className="table-row-button" type="button" onClick={() => setSelectedId(selectedId === booking.id ? "" : booking.id)} aria-expanded={selectedId === booking.id}>{booking.title}</button></td>
+        <td>{formatDate(booking.date)}<small>{booking.time} · {booking.duration} min</small></td>
+        <td>{serviceName(booking.service)}</td><td>{money(booking.amount)}<small>Payé : {money(booking.amountPaid)}</small></td><td>{statusNames[booking.status]}</td>
+      </tr>)}</tbody></table></div>}
+      {selected && <section className="workspace-card workspace-booking-detail" aria-live="polite">
+        <div className="workspace-section-heading"><div><span className="portal-status-pill" data-status={selected.status}>{statusNames[selected.status]}</span><h2>{selected.title}</h2></div><button type="button" aria-label="Fermer le détail" onClick={() => setSelectedId("")}>×</button></div>
+        <p>{serviceName(selected.service)} · {formatDate(selected.date)} · {selected.time} · {selected.duration} min</p>
+        {selected.notes && <p className="workspace-note">{selected.notes}</p>}
+        {selected.project && <p><Link className="button ghost" href={`/espace/projets/${selected.project.id}`}>Suivre mon projet ↗</Link></p>}
+        {selected.status === "confirmed" && <RescheduleRequest booking={selected} onDone={() => void load()} />}
+        {selected.scheduleChanges.length > 0 && <div className="payment-history"><h3>Historique des changements de créneau</h3>{selected.scheduleChanges.map(change => <p key={change.id}>{change.oldDate} · {change.oldTime} → {change.newDate} · {change.newTime} · {change.status === "PENDING" ? "En attente du studio" : change.status === "APPROVED" ? "Accepté" : "Refusé"}</p>)}</div>}
+        <div className="payment-summary"><div><span>Montant convenu</span><strong>{money(selected.amount)}</strong></div><div><span>Déjà réglé sur place</span><strong>{money(selected.amountPaid)}</strong></div><div><span>Solde restant</span><strong>{money(selected.remainingAmount)}</strong></div></div>
+        {selected.payments.length > 0 && <div className="payment-history"><h3>Paiements enregistrés</h3>{selected.payments.map(payment => <p key={payment.id}>{money(payment.amount)} · {paymentNames[payment.method] ?? payment.method} · {new Date(payment.paidAt).toLocaleDateString("fr-FR")}</p>)}</div>}
+        <h3>Participants · {selected.participants.length}</h3>
+        <InvitationProfiles bookingId={selected.id} />
+        {selected.participants.length === 0 ? <p>Aucun participant invité pour le moment.</p> : selected.participants.map(person => <p className="workspace-participant" key={person.id}>{person.name} · {person.email} · {person.role}<button type="button" disabled={busy} onClick={() => void mutate({ action: "participant", id: person.id, bookingId: selected.id }, "DELETE")}>Retirer</button></p>)}
+        {selected.status !== "cancelled" && selected.status !== "completed" && <ParticipantForm onSubmit={person => void mutate({ action: "participant", bookingId: selected.id, ...person })} />}
+        <div className="workspace-detail-actions"><button className="button ghost" type="button" onClick={() => downloadCalendar(selected, serviceName(selected.service))}>Télécharger l’invitation .ics</button>{!["cancelled", "completed", "no_show"].includes(selected.status) && <button className="button ghost" type="button" disabled={busy} onClick={() => void mutate({ action: "booking", id: selected.id, status: "cancelled" }, "PATCH")}>Annuler la séance</button>}</div>
+      </section>}
+    </section>
+  </div></main>;
+}
+
+function RescheduleRequest({ booking, onDone }: { booking: Booking; onDone: () => void }) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setBusy(true); setMessage("");
+    try {
+      const response = await fetch(`/api/bookings/${booking.id}/schedule`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date, time }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Proposition impossible.");
+      setMessage(data.message); onDone();
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Proposition impossible."); }
+    finally { setBusy(false); }
+  }
+  const pending = booking.scheduleChanges.some(change => change.status === "PENDING");
+  return <form className={styles.reschedule} onSubmit={submit}><h3>Demander un changement de créneau</h3><div><label>Nouvelle date<input type="date" min={new Date().toISOString().slice(0, 10)} max={new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10)} value={date} onChange={event => setDate(event.target.value)} required /></label><label>Nouvelle heure<input type="time" step={1800} value={time} onChange={event => setTime(event.target.value)} required /></label></div><button className="button ghost" disabled={busy || pending}>{pending ? "Proposition déjà en attente" : busy ? "Envoi…" : "Proposer ce créneau"}</button>{message && <p role="status">{message}</p>}</form>;
+}
+
+function InvitationProfiles({ bookingId }: { bookingId: string }) {
+  const [invitations, setInvitations] = useState<{ name: string; status: string; bio: string | null; socialLinks: Record<string, string> | null; imageConsent: boolean; proposedDate: string | null; proposedTime: string | null }[]>([]);
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/bookings/${bookingId}/invitations`, { cache: "no-store" }).then(response => response.ok ? response.json() : null).then(data => { if (active) setInvitations(data?.invitations ?? []); }).catch(() => { if (active) setInvitations([]); });
+    return () => { active = false; };
+  }, [bookingId]);
+  if (!invitations.length) return null;
+  return <div className="payment-history"><h3>Réponses des invités</h3>{invitations.map((guest, index) => <article className="workspace-invitation" key={`${guest.name}-${index}`}><strong>{guest.name} · {guest.status === "accepted" ? "Présence confirmée" : guest.status === "declined" ? "A décliné" : "En attente"}</strong>{guest.bio && <p>{guest.bio}</p>}{guest.socialLinks && Object.values(guest.socialLinks).map(link => <a key={link} href={link} target="_blank" rel="noreferrer">Profil social ↗</a>)}{guest.imageConsent && <small>Consentement image/voix enregistré</small>}{guest.proposedDate && <small>Créneau proposé : {guest.proposedDate} · {guest.proposedTime}</small>}</article>)}</div>;
+}
+
+function formatDate(date: string) {
+  return new Date(`${date}T12:00:00Z`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Africa/Abidjan" });
+}
+
+function downloadCalendar(booking: Booking, service: string) {
+  const escape = (value: string) => value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
+  const start = Date.parse(`${booking.date}T${booking.time}:00Z`);
+  const stamp = (value: number) => new Date(value).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z/, "Z");
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Studio Plus//Calendrier//FR", "CALSCALE:GREGORIAN", "BEGIN:VEVENT", `UID:${booking.id}@studio-plus`, `DTSTAMP:${stamp(Date.now())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(start + booking.duration * 60000)}`, `SUMMARY:${escape(booking.title)}`, "LOCATION:Studio Plus, Cocody Angré", `DESCRIPTION:${escape(`${service} · ${booking.notes || ""}`)}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n") + "\r\n";
+  const anchor = document.createElement("a");
+  anchor.href = URL.createObjectURL(new Blob([lines], { type: "text/calendar" }));
+  anchor.download = `studio-plus-${booking.date}.ics`;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(anchor.href), 3000);
+}
+
+function ParticipantForm({ onSubmit }: { onSubmit: (participant: { name: string; email: string; role: string }) => void }) {
+  const [open, setOpen] = useState(false);
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    onSubmit({ name: String(form.get("name")), email: String(form.get("email")), role: String(form.get("role")) });
+    event.currentTarget.reset();
+    setOpen(false);
+  }
+  return <div className="workspace-participant-form">{open ? <form className="form-grid" onSubmit={submit}><label>Nom<input name="name" required minLength={2} maxLength={100} /></label><label>E-mail<input name="email" type="email" required maxLength={180} /></label><label>Rôle<select name="role"><option>Invité</option><option>Co-intervenant</option><option>Technicien</option></select></label><button className="button">Ajouter l’invité ↗</button><button className="button ghost" type="button" onClick={() => setOpen(false)}>Annuler</button></form> : <button className="button ghost" type="button" onClick={() => setOpen(true)}>+ Ajouter un participant</button>}</div>;
+}

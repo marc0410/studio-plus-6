@@ -15,9 +15,9 @@ export function ProductionQuiz() {
   const [services, setServices] = useState<ConfigService[]>([]);
 
   useEffect(() => {
-    fetch('/api/studio')
+    fetch('/api/services')
       .then(response => response.json())
-      .then(result => { if (Array.isArray(result.config?.services)) setServices(result.config.services); })
+      .then(result => { if (Array.isArray(result.services)) setServices(result.services); })
       .catch(() => {});
   }, []);
 
