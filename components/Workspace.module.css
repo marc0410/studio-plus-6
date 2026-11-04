@@ -1,0 +1,7 @@
+.reschedule { display: grid; gap: 14px; margin: 22px 0; padding: 18px; border: 1px solid #dedbd5; border-radius: 18px; }
+.reschedule h3 { margin: 0; font-size: 16px; }
+.reschedule > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.reschedule label { display: grid; gap: 7px; color: #666; font-size: 11px; }
+.reschedule input { min-height: 44px; padding: 10px; border: 1px solid #ddd; border-radius: 12px; background: #fff; font: inherit; }
+.reschedule p { color: #8b0000; font-size: 12px; }
+@media (max-width: 540px) { .reschedule > div { grid-template-columns: 1fr; } }

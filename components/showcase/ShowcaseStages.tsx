@@ -40,6 +40,7 @@ export function ShowcaseStages({ activeStage, reducedMotion }: { activeStage: Sh
       </div>
     </section>
 
+    {/* Section temporairement commentée à la demande de Studio+.
     <section className="showcase-content-stage showcase-content-stage--moments" data-showcase-panel="moments" aria-labelledby="showcase-moments-title" aria-hidden={!reducedMotion && activeStage !== 'moments'} inert={!reducedMotion && activeStage !== 'moments'}>
       <div className="showcase-stage-inner">
         <SectionTitle id="showcase-moments-title" eyebrow="Images du studio" title="Des instants" emphasis="qui restent." note="Des visages, des idées et des coulisses, gardés en images." />
@@ -52,7 +53,7 @@ export function ShowcaseStages({ activeStage, reducedMotion }: { activeStage: Sh
         </div>
         <span className="showcase-moments-count">12 tirages <i aria-hidden="true" /> Cocody · Abidjan</span>
       </div>
-    </section>
+    </section> */}
 
     <section className="showcase-content-stage showcase-content-stage--finalcut" data-showcase-panel="finalcut" aria-labelledby="showcase-finalcut-title" aria-hidden={!reducedMotion && activeStage !== 'finalcut'} inert={!reducedMotion && activeStage !== 'finalcut'}>
       <div className="showcase-finalcut-shade" data-finalcut-shade aria-hidden="true" />

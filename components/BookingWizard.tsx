@@ -13,8 +13,8 @@ const services = [
 
 type ConfigService = { id: string; name: string; duration: number; price: number | null; image: string };
 type Bootstrap = {
-  me: null | { name: string };
-  config: { services: ConfigService[]; open: number; close: number; closedDays: number[] };
+  me: null | { name: string; email: string };
+  config: { services: ConfigService[]; open: number; close: number; closedDays: number[]; closedDates?: string[] };
   bookings: unknown[];
 };
 const formatMoney = (value: number | null) => value === null ? 'À confirmer' : `${new Intl.NumberFormat('fr-FR').format(value)} FCFA`;
@@ -36,11 +36,14 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
 
   useEffect(() => {
     let active = true;
-    fetch('/api/studio')
+    fetch('/api/bookings')
       .then(response => response.json())
       .then(result => {
         if (!result?.config) throw new Error('Impossible de charger les prestations.');
-        if (active) setData(result);
+        if (active) {
+          setData(result);
+          if (result.me) setFields(current => ({ ...current, name: result.me.name, email: result.me.email }));
+        }
       })
       .catch(() => { if (active) setMessage('Impossible de charger les prestations. Réessayez dans un instant.'); })
       .finally(() => { if (active) setLoading(false); });
@@ -49,7 +52,7 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
 
   useEffect(() => {
     if (!date) return;
-    fetch(`/api/studio?action=availability&date=${date}`)
+    fetch(`/api/availability?date=${date}`)
       .then(response => response.json())
       .then(result => setOccupied(result.occupied || []))
       .catch(() => setMessage('Les disponibilités ne sont pas accessibles pour le moment.'));
@@ -60,7 +63,7 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
   const dateLabel = date ? new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${date}T12:00:00Z`)) : 'À choisir';
   const times = useMemo(() => {
     if (!date || !data) return [];
-    if (data.config.closedDays.includes(new Date(`${date}T12:00:00Z`).getUTCDay())) return [];
+    if (data.config.closedDays.includes(new Date(`${date}T12:00:00Z`).getUTCDay()) || data.config.closedDates?.includes(date)) return [];
     const selected = data.config.services.find(item => item.id === service);
     if (!selected) return [];
     const available: string[] = [];
@@ -82,10 +85,10 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
     setBusy(true);
     setMessage('');
     try {
-      const response = await fetch('/api/studio', {
+      const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'booking', service, date, time, ...fields }),
+        body: JSON.stringify({ service, date, time, ...fields }),
       });
       const result = await response.json();
       if (!response.ok) throw Error(result.error || 'La demande n’a pas pu être enregistrée.');
@@ -154,8 +157,8 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
               </> : <>
                 <div className="booking-step-kicker">Étape 03 / Vos coordonnées</div><h2>Comment vous joindre ?</h2>
                 <div className="form-grid">
-                  <label>Nom complet<input required minLength={2} maxLength={100} autoComplete="name" value={fields.name} onChange={event => setFields({ ...fields, name: event.target.value })} /></label>
-                  <label>E-mail<input type="email" required maxLength={180} autoComplete="email" value={fields.email} onChange={event => setFields({ ...fields, email: event.target.value })} /></label>
+                  <label>Nom complet<input required minLength={2} maxLength={100} autoComplete="name" value={fields.name} readOnly /></label>
+                  <label>E-mail du compte<input type="email" required maxLength={180} autoComplete="email" value={fields.email} readOnly /><small>Les confirmations seront envoyées à cette adresse.</small></label>
                   <label>Téléphone / WhatsApp<input type="tel" required value={fields.phone} onChange={event => setFields({ ...fields, phone: event.target.value })} /></label>
                   <label>Titre de la séance<input required minLength={2} maxLength={150} value={fields.title} onChange={event => setFields({ ...fields, title: event.target.value })} /></label>
                   <label className="wide">Quelques détails<textarea rows={4} maxLength={3000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} /></label>

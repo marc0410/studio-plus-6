@@ -13,6 +13,7 @@ export type StudioConfig = {
   open: number;
   close: number;
   closedDays: number[];
+  closedDates: string[];
   scheduleVerified: boolean;
 };
 export const DEFAULT_SERVICES: StudioService[] = [
@@ -20,7 +21,7 @@ export const DEFAULT_SERVICES: StudioService[] = [
   { id: 'photo', name: 'Shooting photo', tag: 'Le bon regard sur vous.', duration: 60, price: null, description: 'Portrait, produit ou contenu de marque. Précisez votre besoin pour préparer la séance.', image: 'catalogue-photo.webp', color: '#034da5' },
   { id: 'video', name: 'Production vidéo', tag: 'Donnez vie à votre histoire.', duration: 120, price: null, description: 'Une demande de tournage à construire avec l’équipe : format, ambiance et livrables.', image: 'studio-backstage.webp', color: '#996822' },
 ];
-export const DEFAULT_CONFIG: StudioConfig = { services: DEFAULT_SERVICES, open: 8.5, close: 20, closedDays: [0], scheduleVerified: false };
+export const DEFAULT_CONFIG: StudioConfig = { services: DEFAULT_SERVICES, open: 8.5, close: 20, closedDays: [0], closedDates: [], scheduleVerified: false };
 export function validDate(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
 }
@@ -41,7 +42,7 @@ export function validateBooking(booking: Record<string, any>, config: StudioConf
   const start = Date.parse(`${booking.date}T${booking.time}:00Z`);
   if (!Number.isFinite(start) || start < now || start > now + 180 * 86400000) throw Error('Choisissez une date future dans les six prochains mois.');
   const minutes = Number(booking.time.slice(0, 2)) * 60 + Number(booking.time.slice(3));
-  if (config.closedDays.includes(new Date(`${booking.date}T12:00:00Z`).getUTCDay()) || minutes < config.open * 60 || minutes + service.duration > config.close * 60) throw Error('Ce créneau est en dehors des horaires du studio.');
+  if (config.closedDays.includes(new Date(`${booking.date}T12:00:00Z`).getUTCDay()) || (config.closedDates ?? []).includes(booking.date) || minutes < config.open * 60 || minutes + service.duration > config.close * 60) throw Error('Ce créneau est en dehors des horaires du studio.');
   if (typeof booking.name !== 'string' || booking.name.trim().length < 2 || booking.name.length > 100) throw Error('Renseignez votre nom.');
   if (!validEmail(booking.email)) throw Error('Renseignez un e-mail valide.');
   if (typeof booking.phone !== 'string' || !/^\+?[\d\s().-]{6,25}$/.test(booking.phone)) throw Error('Renseignez un numéro de téléphone valide.');
@@ -58,5 +59,7 @@ export function validateConfig(input: unknown): StudioConfig {
   }
   if (!Number.isFinite(config.open) || !Number.isFinite(config.close) || !Number.isInteger(config.open * 2) || !Number.isInteger(config.close * 2) || config.open < 0 || config.close > 24 || config.open >= config.close) throw Error('Vérifiez les heures d’ouverture.');
   if (!Array.isArray(config.closedDays) || config.closedDays.some(day => !Number.isInteger(day) || day < 0 || day > 6) || config.closedDays.length === 7) throw Error('Vérifiez les jours de fermeture.');
-  return { ...DEFAULT_CONFIG, open: config.open, close: config.close, closedDays: [...new Set(config.closedDays)], scheduleVerified: config.scheduleVerified === true, services: DEFAULT_SERVICES.map(base => ({ ...base, price: config.services.find(item => item.id === base.id)!.price, duration: config.services.find(item => item.id === base.id)!.duration })) };
+  const closedDates = Array.isArray(config.closedDates) ? [...new Set(config.closedDates)] : [];
+  if (closedDates.length > 100 || closedDates.some(date => !validDate(date))) throw Error('Vérifiez les dates de fermeture exceptionnelle.');
+  return { ...DEFAULT_CONFIG, open: config.open, close: config.close, closedDays: [...new Set(config.closedDays)], closedDates, scheduleVerified: config.scheduleVerified === true, services: DEFAULT_SERVICES.map(base => ({ ...base, price: config.services.find(item => item.id === base.id)!.price, duration: config.services.find(item => item.id === base.id)!.duration })) };
 }

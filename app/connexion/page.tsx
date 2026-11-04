@@ -19,9 +19,10 @@ export default function Connexion() {
       });
       const result = await response.json();
       if (!response.ok) throw Error(result.error || 'Connexion impossible.');
-      const destination = new URLSearchParams(location.search).get('return_to') || '/espace';
-      const allowed = /^\/(?:espace|tarifs|projets|studio|reserver(?:\?service=(?:photo|podcast|video)(?:&date=\d{4}-\d{2}-\d{2}&time=\d{2}:(?:00|30))?)?)$/.test(destination);
-      location.assign(allowed ? destination : '/espace');
+      const params = new URLSearchParams(location.search);
+      const destination = params.get('return_to') || result.home || '/espace';
+      const allowed = /^\/(?:espace(?:\/.*)?|equipe(?:\/.*)?|gestion(?:\/.*)?|reserver(?:\?[^#]*)?)$/.test(destination) && !destination.startsWith('//');
+      location.assign(allowed ? destination : result.home || '/espace');
     } catch (error) { setError(error instanceof Error ? error.message : 'Réessayez dans un instant.'); }
     finally { setBusy(false); }
   }
@@ -39,7 +40,8 @@ export default function Connexion() {
       <label>Votre mot de passe<input type="password" name="password" autoComplete="current-password" required maxLength={200} /></label>
       <p className="auth-error" role="alert">{error}</p>
       <button disabled={busy} type="submit">{busy ? 'Connexion…' : 'Entrer dans mon espace ↗'}</button>
-      <p className="auth-note">Votre accès est créé par l’équipe du studio. Contactez-la si vous n’avez pas encore de compte.</p>
+      <p className="auth-note">Vous découvrez votre espace ? <a href="/inscription">Créer un compte client</a>.</p>
+      <a className="auth-note" href="/mot-de-passe-oublie">Mot de passe oublié ?</a>
     </form></section>
   </main>;
 }

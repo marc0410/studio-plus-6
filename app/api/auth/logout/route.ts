@@ -1,4 +1,4 @@
-import { logout } from '../../../../lib/auth.ts';
+import { signOut } from '@/lib/supabase-auth';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const POST = logout;
+export const POST = signOut;
