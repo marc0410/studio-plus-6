@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Ink } from '@/components/handwriting/Ink';
+import { trackStudioEvent } from '@/lib/analytics';
 
 const services = [
   { id: 'podcast', name: 'Podcast', image: 'studio-session.webp' },
@@ -33,6 +34,9 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
   const [fields, setFields] = useState({ name: '', email: '', phone: '', title: '', notes: '' });
+
+  useEffect(() => { trackStudioEvent('booking_started'); }, []);
+  useEffect(() => { trackStudioEvent('booking_step_viewed', { step }); }, [step]);
 
   useEffect(() => {
     let active = true;
@@ -84,6 +88,7 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
     if (!data?.me) return;
     setBusy(true);
     setMessage('');
+    trackStudioEvent('booking_submitted', { service });
     try {
       const response = await fetch('/api/bookings', {
         method: 'POST',
@@ -92,6 +97,7 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
       });
       const result = await response.json();
       if (!response.ok) throw Error(result.error || 'La demande n’a pas pu être enregistrée.');
+      trackStudioEvent('booking_completed', { service });
       setSent(true);
       setMessage(result.message || 'Votre demande a été envoyée.');
     } catch (error) {
@@ -138,14 +144,14 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
             {step === 1 && <>
               <div className="booking-step-kicker">Étape 01 / Le projet</div><h2>Quel projet préparez-vous ?</h2>
               <p className="form-hint">Choisissez la prestation que vous souhaitez réserver.</p>
-              <div className="booking-service-list">{serviceOptions.map(item => <button key={item.id} type="button" onClick={() => setService(item.id)} aria-pressed={service === item.id} className="booking-service"><Image src={`/studio/assets/${item.image}`} alt="" width={128} height={112} /><span><strong>{item.name}</strong><small>{item.duration} min · {formatMoney(item.price)}</small></span><b>{service === item.id ? '✓' : '＋'}</b></button>)}</div>
+              <div className="booking-service-list">{serviceOptions.map(item => <button key={item.id} type="button" onClick={() => { setService(item.id); trackStudioEvent('booking_service_selected', { service: item.id }); }} aria-pressed={service === item.id} className="booking-service"><Image src={`/studio/assets/${item.image}`} alt="" width={128} height={112} /><span><strong>{item.name}</strong><small>{item.duration} min · {formatMoney(item.price)}</small></span><b>{service === item.id ? '✓' : '＋'}</b></button>)}</div>
               <button className="button" type="button" onClick={() => setStep(2)}>Continuer ↗</button>
             </>}
             {step === 2 && <>
               <div className="booking-step-kicker">Étape 02 / Le créneau</div><h2>Choisissez un créneau.</h2>
               <p className="form-hint">Les horaires affichés tiennent compte de la durée de la prestation.</p>
-              <div className="form-grid"><label className="wide">Date souhaitée<input type="date" min={new Date().toISOString().slice(0, 10)} max={new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10)} value={date} onChange={event => { setDate(event.target.value); setTime(''); }} required /></label></div>
-              {date && <div className="booking-availability"><div className="booking-availability-heading"><span>Horaires disponibles</span><small>{times.length ? `${times.length} créneau${times.length > 1 ? 'x' : ''}` : 'Complet'}</small></div><div className="time-grid" role="group" aria-label="Horaires disponibles">{times.length ? times.map(slot => <button type="button" key={slot} onClick={() => setTime(slot)} aria-pressed={time === slot}>{slot}</button>) : <p className="project-note">Aucun créneau disponible à cette date. Essayez un autre jour.</p>}</div></div>}
+              <div className="form-grid"><label className="wide">Date souhaitée<input type="date" min={new Date().toISOString().slice(0, 10)} max={new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10)} value={date} onChange={event => { setDate(event.target.value); setTime(''); trackStudioEvent('booking_date_selected'); }} required /></label></div>
+              {date && <div className="booking-availability"><div className="booking-availability-heading"><span>Horaires disponibles</span><small>{times.length ? `${times.length} créneau${times.length > 1 ? 'x' : ''}` : 'Complet'}</small></div><div className="time-grid" role="group" aria-label="Horaires disponibles">{times.length ? times.map(slot => <button type="button" key={slot} onClick={() => { setTime(slot); trackStudioEvent('booking_slot_selected', { service }); }} aria-pressed={time === slot}>{slot}</button>) : <p className="project-note">Aucun créneau disponible à cette date. Essayez un autre jour.</p>}</div></div>}
               <div className="quiz-controls"><button className="button ghost" type="button" onClick={() => setStep(1)}>← Retour</button><button className="button" type="button" disabled={!date || !time} onClick={() => setStep(3)}>Continuer ↗</button></div>
             </>}
             {step === 3 && <>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { trackStudioEvent } from "@/lib/analytics";
 
 export default function AcceptTeamInvite({ tokenHash, next }: { tokenHash: string; next: "/equipe" | "/gestion" }) {
   const [message, setMessage] = useState("Vérification de votre invitation…");
@@ -37,6 +38,7 @@ export default function AcceptTeamInvite({ tokenHash, next }: { tokenHash: strin
       if (updated.error) throw updated.error;
       const accepted = await fetch("/api/auth/accept-invite", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
       if (!accepted.ok) throw new Error((await accepted.json()).error ?? "Impossible d’activer l’invitation.");
+      trackStudioEvent("team_invitation_activated", { destination: next === "/equipe" ? "team" : "management" });
       setMessage("Accès activé. Redirection…"); router.replace(next); router.refresh();
     } catch (error) { setMessage(error instanceof Error ? error.message : "Impossible d’activer l’invitation."); }
     finally { setBusy(false); }

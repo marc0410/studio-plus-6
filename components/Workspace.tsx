@@ -6,6 +6,7 @@ import { Ink } from "@/components/handwriting/Ink";
 import { PortalError } from "@/components/PortalErrorState";
 import { PortalSkeleton } from "@/components/PortalStates";
 import styles from "@/components/Workspace.module.css";
+import { trackStudioEvent } from "@/lib/analytics";
 
 type Participant = { id: string; name: string; email: string; role: string };
 type Payment = { id: string; amount: number; method: string; paidAt: string };
@@ -60,6 +61,8 @@ export function Workspace() {
       const response = await fetch(endpoint, { method: bookingMutation ? "PATCH" : method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "La modification a échoué.");
+      if (bookingMutation && body.status === "cancelled") trackStudioEvent("booking_cancelled_by_client");
+      if (invitationMutation) trackStudioEvent(method === "DELETE" ? "booking_participant_removed" : "booking_participant_invited", { role: String(body.role ?? "participant") });
       await load();
       setFeedback(result.message || "Modifications enregistrées.");
     } catch (caught) {
@@ -122,6 +125,7 @@ function RescheduleRequest({ booking, onDone }: { booking: Booking; onDone: () =
       const response = await fetch(`/api/bookings/${booking.id}/schedule`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date, time }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Proposition impossible.");
+      trackStudioEvent("booking_reschedule_requested");
       setMessage(data.message); onDone();
     } catch (error) { setMessage(error instanceof Error ? error.message : "Proposition impossible."); }
     finally { setBusy(false); }

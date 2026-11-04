@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PortalSkeleton } from "@/components/PortalStates";
+import { trackStudioEvent } from "@/lib/analytics";
 
 type Invitation = { name: string; status: string; note: string | null; bio: string | null; rundown: string | null; imageConsent: boolean; proposedDate: string | null; proposedTime: string | null; booking: { service: string; title: string; date: string; time: string } };
 
 export function InvitationResponse({ token }: { token: string }) {
+  const viewed = useRef(false);
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -24,6 +26,10 @@ export function InvitationResponse({ token }: { token: string }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Cette invitation n’est plus disponible.");
       setInvitation(data.invitation);
+      if (!viewed.current) {
+        viewed.current = true;
+        trackStudioEvent("guest_invitation_viewed", { status: data.invitation.status });
+      }
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Impossible de charger l’invitation."); }
     finally { setLoading(false); }
   }, [token]);
@@ -38,6 +44,7 @@ export function InvitationResponse({ token }: { token: string }) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Votre réponse n’a pas été enregistrée.");
+      trackStudioEvent("guest_invitation_responded", { response: responseType });
       setMessage(data.message); await load();
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Votre réponse n’a pas été enregistrée."); }
     finally { setBusy(false); }

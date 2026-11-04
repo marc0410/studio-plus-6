@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { PortalError } from "@/components/PortalErrorState";
 import { PortalSkeleton } from "@/components/PortalStates";
 import styles from "@/components/ProjectWorkspace.module.css";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { trackStudioEvent } from "@/lib/analytics";
 
 type Project = {
   id: string; title: string; status: string;
@@ -19,6 +20,7 @@ export function ProjectWorkspace({ projectId, canManage = false }: { projectId: 
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const viewed = useRef(false);
   const load = useCallback(async () => {
     setError("");
     try {
@@ -26,6 +28,10 @@ export function ProjectWorkspace({ projectId, canManage = false }: { projectId: 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Projet inaccessible.");
       setProject(data.project);
+      if (!viewed.current) {
+        viewed.current = true;
+        trackStudioEvent("project_viewed", { audience: canManage ? "team" : "client" });
+      }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Impossible de charger le projet."); }
   }, [projectId]);
   useEffect(() => { void load(); }, [load]);
@@ -36,6 +42,7 @@ export function ProjectWorkspace({ projectId, canManage = false }: { projectId: 
       const response = await fetch(`/api/projects/${projectId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ taskId, status }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Modification impossible.");
+      trackStudioEvent("project_task_updated", { status });
       setFeedback("Étape mise à jour."); await load();
     } catch (cause) { setFeedback(cause instanceof Error ? cause.message : "Modification impossible."); }
     finally { setBusy(false); }
@@ -50,6 +57,7 @@ export function ProjectWorkspace({ projectId, canManage = false }: { projectId: 
       const response = await fetch(`/api/projects/${projectId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(kind === "task" ? { kind, title: form.get("title"), content: form.get("content") } : { kind, content: form.get("content"), internal: form.get("internal") === "on" }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Enregistrement impossible.");
+      trackStudioEvent(kind === "task" ? "project_task_created" : "project_note_created");
       formElement.reset(); setFeedback(kind === "task" ? "Étape ajoutée." : "Note ajoutée."); await load();
     } catch (cause) { setFeedback(cause instanceof Error ? cause.message : "Enregistrement impossible."); }
     finally { setBusy(false); }
@@ -71,6 +79,7 @@ export function ProjectWorkspace({ projectId, canManage = false }: { projectId: 
       const response = await fetch(`/api/projects/${projectId}/deliverables`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...input, path: grant.path }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Le fichier a été transmis, mais son partage n’a pas pu être confirmé.");
+      trackStudioEvent("deliverable_upload_completed", { file_type: file.type || "unknown" });
       formElement.reset(); setFeedback("Livrable partagé avec le client."); await load();
     } catch (cause) { setFeedback(cause instanceof Error ? cause.message : "Téléversement impossible."); }
     finally { setBusy(false); }
@@ -82,6 +91,7 @@ export function ProjectWorkspace({ projectId, canManage = false }: { projectId: 
       const response = await fetch(`/api/projects/${projectId}/deliverables/${deliverableId}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Téléchargement indisponible.");
+      trackStudioEvent("deliverable_download_started");
       window.location.assign(data.url);
     } catch (cause) { setFeedback(cause instanceof Error ? cause.message : "Téléchargement indisponible."); }
   }

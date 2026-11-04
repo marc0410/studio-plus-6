@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { trackStudioEvent } from "@/lib/analytics";
 
 type Flow = "signup" | "recovery" | "update";
 
@@ -10,6 +11,7 @@ export function AuthFlow({ flow }: { flow: Flow }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  useEffect(() => { trackStudioEvent("auth_flow_viewed", { flow }); }, [flow]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -17,27 +19,32 @@ export function AuthFlow({ flow }: { flow: Flow }) {
     const form = new FormData(event.currentTarget);
     try {
       if (flow === "signup") {
+        trackStudioEvent("signup_submitted");
         const response = await fetch("/api/auth/signup", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: form.get("name"), email: form.get("email"), password: form.get("password") }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Création impossible.");
+        trackStudioEvent("signup_completed", { email_confirmation_required: Boolean(result.needsEmailConfirmation) });
         if (result.needsEmailConfirmation) setSuccess(result.message);
         else location.assign("/espace");
       } else if (flow === "recovery") {
+        trackStudioEvent("password_recovery_submitted");
         const response = await fetch("/api/auth/recovery", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: form.get("email") }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Envoi impossible.");
+        trackStudioEvent("password_recovery_completed");
         setSuccess(result.message);
       } else {
         const supabase = createSupabaseBrowserClient();
         const password = String(form.get("password") ?? "");
         const { error: updateError } = await supabase.auth.updateUser({ password });
         if (updateError) throw updateError;
+        trackStudioEvent("password_updated");
         setSuccess("Votre mot de passe a été modifié. Vous pouvez maintenant vous connecter.");
       }
     } catch (caught) {

@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { PortalError } from "@/components/PortalErrorState";
 import { PortalSkeleton } from "@/components/PortalStates";
 import Link from "next/link";
+import { trackStudioEvent } from "@/lib/analytics";
 
 type Profile = { fullName: string; phone: string | null; email: string };
 export function AccountSettings({ backHref, embedded = false }: { backHref: string; embedded?: boolean }) {
@@ -26,6 +27,7 @@ export function AccountSettings({ backHref, embedded = false }: { backHref: stri
       const response = await fetch("/api/account/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fullName: form.get("fullName"), phone: form.get("phone") }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Modification impossible.");
+      trackStudioEvent("account_profile_updated");
       setProfile(data.profile); setMessage("Profil enregistré.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Modification impossible."); }
     finally { setBusy(false); }
@@ -36,6 +38,7 @@ export function AccountSettings({ backHref, embedded = false }: { backHref: stri
     try {
       const { error: cause } = await createSupabaseBrowserClient().auth.updateUser({ email }, { emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(location.pathname)}` });
       if (cause) throw cause;
+      trackStudioEvent("account_email_change_requested");
       setMessage("Un lien de confirmation a été envoyé. La nouvelle adresse sera activée après confirmation.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Demande de changement impossible."); }
     finally { setBusy(false); }
@@ -46,6 +49,7 @@ export function AccountSettings({ backHref, embedded = false }: { backHref: stri
     try {
       const { error: cause } = await createSupabaseBrowserClient().auth.updateUser({ password });
       if (cause) throw cause;
+      trackStudioEvent("account_password_updated");
       setMessage("Mot de passe mis à jour."); formElement.reset();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Modification impossible."); }
     finally { setBusy(false); }

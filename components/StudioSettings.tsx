@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { PortalError } from "@/components/PortalErrorState";
 import { PortalSkeleton } from "@/components/PortalStates";
 import type { StudioConfig } from "@/lib/studio-domain";
+import { trackStudioEvent } from "@/lib/analytics";
 
 const days = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 const hours = Array.from({ length: 49 }, (_, index) => index / 2);
@@ -49,6 +50,7 @@ export function StudioSettings() {
       const response = await fetch("/api/admin/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ config }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Enregistrement impossible.");
+      trackStudioEvent("studio_settings_updated");
       setConfig(data.config); setFeedback("Les tarifs et disponibilités ont été enregistrés.");
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Enregistrement impossible."); }
     finally { setBusy(false); }

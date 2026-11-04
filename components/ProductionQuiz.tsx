@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'motion/react';
 import { quizQuestions } from '@/lib/site-content';
+import { trackStudioEvent } from '@/lib/analytics';
 
 type ConfigService = { id: string; name: string; duration: number; price: number | null };
 
@@ -23,6 +24,8 @@ export function ProductionQuiz() {
 
   function next() {
     if (!chosen) return;
+    if (step === 0) trackStudioEvent('project_brief_started');
+    trackStudioEvent(step === 2 ? 'project_brief_completed' : 'project_brief_answered', { step: step + 1 });
     const updated = [...answers];
     updated[step] = chosen;
     setAnswers(updated);
@@ -72,7 +75,7 @@ export function ProductionQuiz() {
               <h3>{serviceLabel}</h3>
               <div className="call-sheet-grid"><div><span>Ambiance</span><strong>{answers[1]}</strong></div><div><span>Budget envisagé</span><strong>{budgetLabel}</strong></div><div><span>Durée de référence</span><strong>{selectedService ? `${selectedService.duration} min` : 'À définir'}</strong></div><div><span>Tarif du studio</span><strong>{selectedService?.price != null ? `${new Intl.NumberFormat('fr-FR').format(selectedService.price)} FCFA` : 'À confirmer'}</strong></div></div>
               <p className="call-sheet-note">Le studio confirme le prix et le créneau selon les détails de votre projet.</p>
-              <div className="quiz-controls"><button className="text-button" type="button" onClick={() => { setStep(2); setChosen(answers[2] || ''); }}>← Modifier</button><Link className="button" href={`/reserver?service=${answers[0] || 'podcast'}`}>Réserver cette prestation <span aria-hidden="true">↗</span></Link></div>
+              <div className="quiz-controls"><button className="text-button" type="button" onClick={() => { setStep(2); setChosen(answers[2] || ''); }}>← Modifier</button><Link className="button" href={`/reserver?service=${answers[0] || 'podcast'}`} onClick={() => trackStudioEvent('booking_cta_clicked', { source: 'project_brief', service: answers[0] || 'podcast' })}>Réserver cette prestation <span aria-hidden="true">↗</span></Link></div>
             </motion.div>
           )}
         </AnimatePresence>

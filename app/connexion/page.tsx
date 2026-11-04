@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import './connexion.css';
 import { Ink } from '@/components/handwriting/Ink';
+import { trackStudioEvent } from '@/lib/analytics';
 
 export default function Connexion() {
   const [error, setError] = useState('');
@@ -12,6 +13,7 @@ export default function Connexion() {
     event.preventDefault();
     setBusy(true); setError('');
     const fields = new FormData(event.currentTarget);
+    trackStudioEvent('login_submitted');
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -19,6 +21,7 @@ export default function Connexion() {
       });
       const result = await response.json();
       if (!response.ok) throw Error(result.error || 'Connexion impossible.');
+      trackStudioEvent('login_completed', { role: String(result.home || '').startsWith('/gestion') ? 'management' : String(result.home || '').startsWith('/equipe') ? 'team' : 'client' });
       const params = new URLSearchParams(location.search);
       const destination = params.get('return_to') || result.home || '/espace';
       const allowed = /^\/(?:espace(?:\/.*)?|equipe(?:\/.*)?|gestion(?:\/.*)?|reserver(?:\?[^#]*)?)$/.test(destination) && !destination.startsWith('//');

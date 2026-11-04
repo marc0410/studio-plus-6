@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { PortalEmpty, PortalSkeleton } from "@/components/PortalStates";
 import { PortalError } from "@/components/PortalErrorState";
 import styles from "@/components/ManagerBookings.module.css";
+import { trackStudioEvent } from "@/lib/analytics";
 
 type Booking = { id: string; title: string; date: string; time: string; duration: number; amount: number | null; amountPaid: number; remainingAmount: number | null; payments: { id: string; amount: number; method: string; paidAt: string }[]; status: string; name: string; email: string; phone: string; service: string; project: { id: string } | null };
 type ApiData = { bookings: Booking[]; config: { services: { id: string; name: string }[] }; pagination?: { page: number; pages: number; total: number }; staffOptions?: { id: string; fullName: string }[] };
@@ -73,6 +74,7 @@ export function ManagerBookings() {
       const response = await fetch(`/api/bookings/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Modification impossible.");
+      trackStudioEvent("booking_status_updated", { status: String(body.status ?? "updated") });
       setFeedback(result.message || "Réservation mise à jour.");
       await load();
     } catch (caught) {
@@ -92,6 +94,7 @@ export function ManagerBookings() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Paiement impossible.");
+      trackStudioEvent("booking_payment_recorded", { method: String(form.get("method")) });
       setFeedback("Paiement enregistré.");
       formElement.reset();
       await load();
@@ -146,6 +149,7 @@ function TeamAssignments({ bookingId }: { bookingId: string }) {
       const response = await fetch(`/api/bookings/${bookingId}/staff`, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ staffId }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Mise à jour impossible.");
+      trackStudioEvent("booking_staff_assignment_changed", { action: method === "POST" ? "assigned" : "removed" });
       setMessage(data.message); setSelected(""); await load();
     } catch (error) { setMessage(error instanceof Error ? error.message : "Mise à jour impossible."); }
     finally { setBusy(false); }
@@ -168,6 +172,7 @@ function ManagerStatusControls({ bookingId, status, onDone }: { bookingId: strin
       const response = await fetch(`/api/bookings/${bookingId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: next }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Modification impossible.");
+      trackStudioEvent("booking_status_updated", { status: next });
       onDone();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Modification impossible."); }
     finally { setBusy(false); }
@@ -193,6 +198,7 @@ function ScheduleChangeReview({ bookingId, onDone }: { bookingId: string; onDone
       const response = await fetch(`/api/bookings/${bookingId}/schedule`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ changeId: change.id, decision }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Action impossible.");
+      trackStudioEvent("booking_schedule_change_decided", { decision });
       setChange(null); onDone();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Action impossible."); }
     finally { setBusy(false); }
@@ -209,6 +215,7 @@ function InvoiceEmailForm({ bookingId, onResult }: { bookingId: string; onResult
       const response = await fetch(`/api/bookings/${bookingId}/invoice`, { method: "POST" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Envoi impossible.");
+      trackStudioEvent("booking_invoice_sent");
       onResult(result.message || "Facture envoyée.");
     } catch (error) { onResult(error instanceof Error ? error.message : "Envoi impossible."); }
     finally { setBusy(false); }

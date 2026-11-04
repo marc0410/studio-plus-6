@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trackStudioEvent } from "@/lib/analytics";
 
 export function BookingStatusControls({ bookingId, status }: { bookingId: string; status: string }) {
   const [busy, setBusy] = useState(false);
@@ -12,6 +13,7 @@ export function BookingStatusControls({ bookingId, status }: { bookingId: string
       const response = await fetch(`/api/bookings/${bookingId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: nextStatus }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Mise à jour impossible.");
+      trackStudioEvent("booking_status_updated", { status: nextStatus.toLowerCase() });
       window.location.reload();
     } catch (cause) { setMessage(cause instanceof Error ? cause.message : "Mise à jour impossible."); }
     finally { setBusy(false); }

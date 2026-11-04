@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { PortalEmpty, PortalSkeleton } from "@/components/PortalStates";
 import { PortalError } from "@/components/PortalErrorState";
+import { trackStudioEvent } from "@/lib/analytics";
 
 type User = { id: string; email: string; fullName: string; role: "ADMIN" | "MANAGER" | "STAFF" | "CLIENT"; isActive: boolean; invitation: { status: string; expiresAt: string; acceptedAt: string | null } | null };
 const roles: User["role"][] = ["ADMIN", "MANAGER", "STAFF", "CLIENT"];
@@ -30,6 +31,7 @@ export function AdminUsers() {
       const response = await fetch("/api/admin/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: user.id, ...patch }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Modification impossible.");
+      trackStudioEvent("admin_user_access_updated", { changed: patch.role ? "role" : "access" });
       setFeedback("Les accès ont été mis à jour.");
       await load();
     } catch (caught) { setFeedback(caught instanceof Error ? caught.message : "Modification impossible."); }
@@ -45,6 +47,7 @@ export function AdminUsers() {
       const response = await fetch("/api/admin/team-invitations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: values.get("name"), email: values.get("email"), role: values.get("role") }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Invitation impossible.");
+      trackStudioEvent("team_member_invited", { role: String(values.get("role")) });
       setFeedback(data.message); form.reset(); await load();
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Invitation impossible."); }
     finally { setInviteBusy(false); }
@@ -61,6 +64,7 @@ export function AdminUsers() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Action impossible.");
+      trackStudioEvent("team_invitation_action_completed", { action });
       setFeedback(data.message); await load();
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Action impossible."); }
     finally { setBusy(""); }

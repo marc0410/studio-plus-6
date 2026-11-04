@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import '../connexion/connexion.css';
 import { Ink } from '@/components/handwriting/Ink';
+import { trackStudioEvent } from '@/lib/analytics';
 export default function Deconnexion() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -10,6 +11,7 @@ export default function Deconnexion() {
     try {
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       if (!response.ok) throw Error('Déconnexion impossible. Réessayez.');
+      trackStudioEvent('logout_completed');
       location.assign('/');
     } catch (error) { setError(error instanceof Error ? error.message : 'Erreur de connexion.'); setBusy(false); }
   }
