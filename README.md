@@ -1,4 +1,4 @@
-# Studio+ — code source Next.js 16
+# Studio+ 
 
 Application Studio+ sous Next.js 16, React 19 et TypeScript. Les pages publiques, le parcours de réservation et l’espace client utilisent maintenant l’App Router et des composants React. L’API Next.js, SQLite, les sessions et l’administration des tarifs restent intégrés.
 
