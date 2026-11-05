@@ -6,6 +6,7 @@ import { PortalSkeleton } from "@/components/PortalStates";
 import styles from "@/components/ProjectWorkspace.module.css";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { trackStudioEvent } from "@/lib/analytics";
+import { PortalThemeToggle } from "@/components/PortalThemeToggle";
 
 type Project = {
   id: string; title: string; status: string;
@@ -100,6 +101,7 @@ export function ProjectWorkspace({ projectId, canManage = false }: { projectId: 
   if (!project) return <PortalSkeleton rows={5} />;
   const finished = project.tasks.filter(task => task.status === "DONE").length;
   return <section>
+    <div className="portal-topline"><span>Studio+ / Projet</span><PortalThemeToggle /></div>
     <header className="portal-heading"><div><div className="eyebrow"><i />Suivi de projet</div><h1>{project.title}.</h1></div><p>{project.booking.date} · {project.booking.time} · {finished}/{project.tasks.length} étapes terminées</p></header>
     {feedback && <p className="portal-status" role="status">{feedback}</p>}
     <div className="portal-surface"><h2>Votre timeline</h2>

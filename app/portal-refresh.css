@@ -1,0 +1,235 @@
+/* Shared visual language for signed-in client, team and management spaces. */
+.portal-page {
+  --portal-bg: #f4f2ee;
+  --portal-surface: #fff;
+  --portal-line: #dfddd8;
+  --portal-muted: #686760;
+  --portal-accent: #bd3434;
+  min-height: 100dvh;
+  background: var(--portal-bg);
+  color: #201f1c;
+  color-scheme: light;
+}
+.portal-page :is(h1,h2,h3,h4,strong,b) { color: #201f1c; }
+.portal-page a:not(.portal-action) { color: inherit; }
+.portal-page .portal-topline { border-color: var(--portal-line); color: var(--portal-muted); }
+.portal-page .portal-topline a { color: #34332f; }
+.portal-page .portal-heading p,
+.portal-page .portal-row p,
+.portal-page .portal-row small,
+.portal-page .portal-metric span,
+.portal-page .portal-note { color: var(--portal-muted); }
+.portal-page .portal-nav { gap: 8px; }
+.portal-page .portal-nav a {
+  border-color: #d7d4ce;
+  background: #fff;
+  color: #494842;
+  font-weight: 550;
+}
+.portal-page .portal-nav a:hover,
+.portal-page .portal-nav a[aria-current="page"] {
+  border-color: #282723;
+  background: #282723;
+  color: #fff;
+}
+.portal-page .portal-nav :is(input,select),
+.portal-page .portal-inline-form :is(input,select),
+.portal-page .portal-table select,
+.portal-page .portal-form :is(input,select,textarea),
+.portal-page .portal-auth-form input,
+.portal-page .portal-settings-form :is(input:not([type=checkbox]),select),
+.portal-page .portal-invite-form :is(input,select) {
+  border-color: #d7d4ce;
+  background: #fff;
+  color: #201f1c;
+}
+.portal-page .portal-nav label,
+.portal-page .portal-inline-form label,
+.portal-page .portal-form label,
+.portal-page .portal-auth-form label,
+.portal-page .portal-settings-form label,
+.portal-page .portal-settings-form fieldset label,
+.portal-page .portal-invite-form label { color: #55544e; }
+.portal-page :is(input,select,textarea,button,a):focus-visible {
+  outline: 3px solid #bd3434;
+  outline-offset: 3px;
+}
+.portal-page .portal-action {
+  border-color: #282723;
+  background: #282723;
+  color: #fff;
+  font-weight: 600;
+}
+.portal-page .portal-action:hover { border-color: #bd3434; background: #bd3434; }
+.portal-page .portal-action.secondary {
+  border-color: #c9c6bf;
+  background: #fff;
+  color: #292823;
+}
+.portal-page .portal-action.secondary:hover { border-color: #292823; background: #f0eeea; }
+.portal-page .portal-filter { border-color: #d7d4ce; background: #fff; color: #494842; }
+.portal-page .portal-filter[aria-pressed="true"] { border-color: #282723; background: #282723; color: #fff; }
+.portal-page .portal-row,
+.portal-page .portal-rows,
+.portal-page .portal-booking,
+.portal-page .portal-table-wrap,
+.portal-page .portal-table :is(th,td),
+.portal-page .portal-invitation-details { border-color: var(--portal-line); }
+.portal-page .portal-table th { color: #686760; }
+.portal-page .portal-table td { color: #34332f; }
+.portal-page .portal-surface,
+.portal-page .portal-empty,
+.portal-page .portal-error,
+.portal-page .invitation-card { border-color: var(--portal-line); background: #fff; }
+.portal-page .portal-error { border-color: #d9a3a0; }
+.portal-page .portal-status { color: #a52c27; }
+.portal-page .portal-status[data-kind="success"] { color: #28613a; }
+.portal-page .portal-status-pill { border-color: #d7d4ce; color: #494842; }
+.portal-page .portal-status-pill[data-status="confirmed"] { border-color: #8db89a; color: #256238; background: #f0f8f1; }
+.portal-page .portal-status-pill[data-status="requested"] { border-color: #d9a3a0; color: #9e2925; background: #fff5f4; }
+.portal-page .portal-status-pill[data-status="cancelled"] { color: #686760; background: #f3f2ef; }
+.portal-page .portal-skeleton,.workspace-page .portal-skeleton { background: #e7e5e0; }
+.portal-page .portal-skeleton:after,.workspace-page .portal-skeleton:after { background: linear-gradient(90deg,transparent,#ffffffc9,transparent); }
+:is(.portal-page,.workspace-page) .portal-loading { display: grid; gap: 26px; max-width: 100%; }
+:is(.portal-page,.workspace-page) .portal-loading-heading { display: grid; gap: 12px; width: min(520px,100%); }
+:is(.portal-page,.workspace-page) .portal-loading-list { border-top: 1px solid #dfddd8; }
+:is(.portal-page,.workspace-page) .portal-loading-row { display: grid; grid-template-columns: 44px minmax(0,1fr) 110px; align-items: center; gap: 18px; min-height: 92px; padding: 16px 4px; border-bottom: 1px solid #dfddd8; }
+:is(.portal-page,.workspace-page) .portal-skeleton--eyebrow { width: 120px; height: 10px; }
+:is(.portal-page,.workspace-page) .portal-skeleton--title { width: min(370px,82%); height: clamp(34px,6vw,64px); border-radius: 8px; }
+:is(.portal-page,.workspace-page) .portal-skeleton--copy { width: min(290px,70%); height: 14px; }
+:is(.portal-page,.workspace-page) .portal-skeleton--mark { width: 38px; height: 38px; border-radius: 50%; }
+:is(.portal-page,.workspace-page) .portal-loading-lines { display: grid; gap: 10px; }
+:is(.portal-page,.workspace-page) .portal-skeleton--line { width: min(380px,90%); height: 13px; }
+:is(.portal-page,.workspace-page) .portal-skeleton--short { width: min(220px,60%); height: 10px; }
+:is(.portal-page,.workspace-page) .portal-skeleton--action { width: 104px; height: 38px; border-radius: 999px; }
+.workspace-page .eyebrow { color: #686760; }
+.workspace-page .portal-status-pill { border-color: #d7d4ce; color: #494842; }
+.workspace-page .portal-status-pill[data-status="confirmed"] { border-color: #8db89a; color: #256238; background: #f0f8f1; }
+.workspace-page .portal-status-pill[data-status="requested"] { border-color: #d9a3a0; color: #9e2925; background: #fff5f4; }
+.workspace-page .portal-status-pill[data-status="cancelled"] { color: #686760; background: #f3f2ef; }
+.portal-loading-root { min-height: 45vh; }
+
+/* Theme switch applies only to authenticated portal surfaces. */
+:is(.portal-page,.workspace-page) {
+  --portal-bg: #f4f2ee;
+  --portal-surface: #fff;
+  --portal-line: #dfddd8;
+  --portal-muted: #686760;
+  --portal-fg: #201f1c;
+  background: var(--portal-bg);
+  color: var(--portal-fg);
+  color-scheme: light;
+}
+.workspace-page { --portal-bg: #f4f4f1; }
+.portal-theme-toggle {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid var(--portal-line);
+  border-radius: 999px;
+  background: var(--portal-surface);
+  color: var(--portal-fg);
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+.portal-theme-toggle:hover { border-color: var(--portal-accent); }
+.portal-theme-toggle svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.portal-topline-actions { display: flex; align-items: center; gap: 16px; }
+.portal-theme-dock { display: none; }
+.workspace-nav .portal-theme-toggle { width: 100%; justify-content: flex-start; border-radius: 10px; }
+
+html[data-portal-theme="dark"] :is(.portal-page,.workspace-page) {
+  --portal-bg: #151514;
+  --portal-surface: #20201e;
+  --portal-line: #3a3935;
+  --portal-muted: #b2afa7;
+  --portal-fg: #f1efe9;
+  --portal-accent: #df5550;
+  color: var(--portal-fg);
+  background: var(--portal-bg);
+  color-scheme: dark;
+}
+html[data-portal-theme="dark"] .portal-page :is(h1,h2,h3,h4,strong,b),
+html[data-portal-theme="dark"] .workspace-page :is(h1,h2,h3,h4,strong,b) { color: var(--portal-fg); }
+html[data-portal-theme="dark"] .portal-page .portal-topline a,
+html[data-portal-theme="dark"] .portal-page .portal-table td { color: var(--portal-fg); }
+html[data-portal-theme="dark"] .portal-page .portal-nav a,
+html[data-portal-theme="dark"] .portal-page .portal-filter,
+html[data-portal-theme="dark"] .portal-page .portal-action.secondary,
+html[data-portal-theme="dark"] .portal-page .portal-surface,
+html[data-portal-theme="dark"] .portal-page .portal-empty,
+html[data-portal-theme="dark"] .portal-page .portal-error,
+html[data-portal-theme="dark"] .portal-page .invitation-card {
+  border-color: var(--portal-line);
+  background: var(--portal-surface);
+  color: var(--portal-fg);
+}
+html[data-portal-theme="dark"] .portal-page .portal-nav a:hover,
+html[data-portal-theme="dark"] .portal-page .portal-nav a[aria-current="page"],
+html[data-portal-theme="dark"] .portal-page .portal-filter[aria-pressed="true"] {
+  border-color: var(--portal-accent);
+  background: var(--portal-accent);
+  color: #fff;
+}
+html[data-portal-theme="dark"] .portal-page .portal-action { border-color: var(--portal-accent); background: var(--portal-accent); color: #fff; }
+html[data-portal-theme="dark"] .portal-page .portal-action.secondary:hover { background: #2b2a27; }
+html[data-portal-theme="dark"] .portal-page :is(.portal-nav,.portal-inline-form,.portal-table,.portal-form,.portal-auth-form,.portal-settings-form,.portal-invite-form) :is(input,select,textarea) {
+  border-color: var(--portal-line);
+  background: #191918;
+  color: var(--portal-fg);
+  color-scheme: dark;
+}
+html[data-portal-theme="dark"] .portal-page :is(.portal-nav,.portal-inline-form,.portal-form,.portal-auth-form,.portal-settings-form,.portal-invite-form) label { color: #d0cdc5; }
+html[data-portal-theme="dark"] .portal-page .portal-table th { color: var(--portal-muted); }
+html[data-portal-theme="dark"] .portal-page .portal-error { border-color: #78413e; }
+html[data-portal-theme="dark"] .portal-page .portal-status[data-kind="success"] { color: #9bd3a5; }
+html[data-portal-theme="dark"] .portal-page .portal-status-pill { border-color: #514f48; color: #ddd9cf; background: #292824; }
+html[data-portal-theme="dark"] .portal-page .portal-status-pill[data-status="confirmed"] { border-color: #487950; color: #b6e3bd; background: #1b2b1e; }
+html[data-portal-theme="dark"] .portal-page .portal-status-pill[data-status="requested"] { border-color: #78413e; color: #ffb0aa; background: #321e1c; }
+html[data-portal-theme="dark"] .portal-page .portal-status-pill[data-status="cancelled"] { color: #c1beb5; background: #292824; }
+html[data-portal-theme="dark"] :is(.portal-page,.workspace-page) .portal-skeleton { background: #34332f; }
+html[data-portal-theme="dark"] :is(.portal-page,.workspace-page) .portal-skeleton:after { background: linear-gradient(90deg,transparent,#ffffff20,transparent); }
+html[data-portal-theme="dark"] :is(.portal-page,.workspace-page) .portal-loading-list,
+html[data-portal-theme="dark"] :is(.portal-page,.workspace-page) .portal-loading-row { border-color: var(--portal-line); }
+
+/* Client workspace uses legacy page-specific rules; normalize them to portal tokens. */
+html[data-portal-theme="dark"] .workspace-page :is(.workspace-card,.stat,.data-table,.workspace-nav a,.workspace-nav button,.workspace-section-heading button,.data-table button) {
+  border-color: var(--portal-line);
+  background: var(--portal-surface);
+  color: var(--portal-fg);
+}
+html[data-portal-theme="dark"] .workspace-page .data-table :is(th,td) { border-color: var(--portal-line); color: var(--portal-fg); }
+html[data-portal-theme="dark"] .workspace-page :is(.workspace-intro,.workspace-booking-detail>p,.data-table td small,.payment-summary span,.payment-history p,.workspace-participant,.workspace-note,.form-grid label,.closed-days label,.closed-days legend,.eyebrow) { color: var(--portal-muted); }
+html[data-portal-theme="dark"] .workspace-page :is(.form-grid input,.form-grid select,.form-grid textarea,.workspace-participant-form input,.workspace-participant-form select,.workspace-participant-form textarea) {
+  border-color: var(--portal-line);
+  background: #191918;
+  color: var(--portal-fg);
+  color-scheme: dark;
+}
+html[data-portal-theme="dark"] .workspace-page .workspace-note { background: #292824; }
+html[data-portal-theme="dark"] .workspace-page .payment-summary>div { border-color: var(--portal-line); }
+html[data-portal-theme="dark"] .workspace-page :is(.payment-history p,.workspace-participant) { border-color: var(--portal-line); }
+html[data-portal-theme="dark"] .workspace-page .portal-status-pill { border-color: #514f48; color: #ddd9cf; background: #292824; }
+html[data-portal-theme="dark"] .workspace-page .portal-status-pill[data-status="confirmed"] { border-color: #487950; color: #b6e3bd; background: #1b2b1e; }
+html[data-portal-theme="dark"] .workspace-page .portal-status-pill[data-status="requested"] { border-color: #78413e; color: #ffb0aa; background: #321e1c; }
+html[data-portal-theme="dark"] .workspace-page .portal-status-pill[data-status="cancelled"] { color: #c1beb5; background: #292824; }
+html[data-portal-theme="dark"] .workspace-page :is(.button,.portal-action) { border-color: var(--portal-accent); background: var(--portal-accent); color: #fff; }
+html[data-portal-theme="dark"] .workspace-page .table-row-button { color: var(--portal-fg); }
+html[data-portal-theme="dark"] .workspace-page .data-table tr[aria-selected="true"] { background: #321e1c; }
+
+@media (max-width: 760px) {
+  .portal-topline-actions { width: 100%; justify-content: space-between; }
+  .portal-theme-dock { display: block; position: fixed; z-index: 35; top: 14px; right: 14px; }
+}
+@media (max-width: 760px) {
+  :is(.portal-page,.workspace-page) .portal-loading-row { grid-template-columns: 34px minmax(0,1fr); gap: 12px; min-height: 82px; }
+  :is(.portal-page,.workspace-page) .portal-loading-row .portal-skeleton--action { display: none; }
+  .portal-page .portal-nav { margin-inline: -4px; }
+}

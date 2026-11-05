@@ -7,6 +7,7 @@ import { PortalError } from "@/components/PortalErrorState";
 import { PortalSkeleton } from "@/components/PortalStates";
 import styles from "@/components/Workspace.module.css";
 import { trackStudioEvent } from "@/lib/analytics";
+import { PortalThemeToggle } from "@/components/PortalThemeToggle";
 
 type Participant = { id: string; name: string; email: string; role: string };
 type Payment = { id: string; amount: number; method: string; paidAt: string };
@@ -82,7 +83,7 @@ export function Workspace() {
   const serviceName = (id: string) => data.config.services.find(service => service.id === id)?.name ?? id;
 
   return <main id="contenu" className="workspace-page"><div className="workspace-grid">
-    <nav className="workspace-nav" aria-label="Navigation espace client"><Link href="/">← Retour au site</Link><a href="#seances">Mes séances</a><Link href="/reserver">Réserver une séance</Link><Link href="/espace/parametres">Mon compte</Link><Link href="/deconnexion">Se déconnecter</Link></nav>
+    <nav className="workspace-nav" aria-label="Navigation espace client"><Link href="/">← Retour au site</Link><a href="#seances">Mes séances</a><Link href="/reserver">Réserver une séance</Link><Link href="/espace/parametres">Mon compte</Link><Link href="/deconnexion">Se déconnecter</Link><PortalThemeToggle /></nav>
     <section className="workspace-main">
       <div className="eyebrow"><i />Mon espace créatif</div>
       <h1>Bonjour <Ink type="underline" trigger="enter" color="accent">{data.me.name.split(" ")[0]}.</Ink></h1>

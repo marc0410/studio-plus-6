@@ -1,9 +1,12 @@
 import Link from "next/link";
 
 export function PortalSkeleton({ rows = 4 }: { rows?: number }) {
-  return <div className="portal-skeleton-stack" aria-label="Chargement" aria-busy="true">
-    <span className="portal-skeleton portal-skeleton--wide" />
-    {Array.from({ length: rows }, (_, index) => <span className="portal-skeleton portal-skeleton--large" key={index} />)}
+  return <div className="portal-loading" role="status" aria-label="Chargement de l’espace" aria-busy="true">
+    <span className="portal-sr-only">Chargement des informations…</span>
+    <div className="portal-loading-heading" aria-hidden="true"><span className="portal-skeleton portal-skeleton--eyebrow" /><span className="portal-skeleton portal-skeleton--title" /><span className="portal-skeleton portal-skeleton--copy" /></div>
+    <div className="portal-loading-list" aria-hidden="true">
+      {Array.from({ length: rows }, (_, index) => <div className="portal-loading-row" key={index}><span className="portal-skeleton portal-skeleton--mark" /><span className="portal-loading-lines"><span className="portal-skeleton portal-skeleton--line" /><span className="portal-skeleton portal-skeleton--line portal-skeleton--short" /></span><span className="portal-skeleton portal-skeleton--action" /></div>)}
+    </div>
   </div>;
 }
 

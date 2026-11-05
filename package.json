@@ -19,7 +19,8 @@
     "db:legacy-setup": "node --experimental-strip-types scripts/migrate.ts",
     "user:create:legacy": "node --experimental-strip-types scripts/create-user.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs"
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -41,6 +42,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",

@@ -6,6 +6,7 @@ import { PortalError } from "@/components/PortalErrorState";
 import { PortalSkeleton } from "@/components/PortalStates";
 import Link from "next/link";
 import { trackStudioEvent } from "@/lib/analytics";
+import { PortalThemeToggle } from "@/components/PortalThemeToggle";
 
 type Profile = { fullName: string; phone: string | null; email: string };
 export function AccountSettings({ backHref, embedded = false }: { backHref: string; embedded?: boolean }) {
@@ -56,7 +57,7 @@ export function AccountSettings({ backHref, embedded = false }: { backHref: stri
   }
   if (error && !profile) return <PortalError title={error} retry={() => void load().catch(cause => setError(String(cause)))} />;
   if (!profile) return <PortalSkeleton rows={3} />;
-  return <section id="contenu" className={embedded ? "portal-account-settings" : "portal-page"}><div className={embedded ? undefined : "portal-wrap"}><div className="portal-topline"><Link href={backHref}>← Retour à mon espace</Link></div><header className="portal-heading"><div><div className="eyebrow"><i />Compte</div><h1>Mes paramètres.</h1></div><p>Modifiez vos coordonnées et vos identifiants. Le changement d’e-mail nécessite une confirmation.</p></header>
+  return <section id="contenu" className={embedded ? "portal-account-settings" : "portal-page"}><div className={embedded ? undefined : "portal-wrap"}><div className="portal-topline"><Link href={backHref}>← Retour à mon espace</Link><PortalThemeToggle /></div><header className="portal-heading"><div><div className="eyebrow"><i />Compte</div><h1>Mes paramètres.</h1></div><p>Modifiez vos coordonnées et vos identifiants. Le changement d’e-mail nécessite une confirmation.</p></header>
     {message && <p className="portal-status" role="status">{message}</p>}{error && <p className="portal-status" role="alert">{error}</p>}
     <form className="portal-surface portal-auth-form" onSubmit={save}><h2>Coordonnées</h2><label>Nom complet<input name="fullName" required minLength={2} maxLength={100} defaultValue={profile.fullName} /></label><label>Téléphone<input name="phone" autoComplete="tel" maxLength={25} defaultValue={profile.phone ?? ""} /></label><button className="portal-action" disabled={busy}>{busy ? "Enregistrement…" : "Enregistrer"}</button></form>
     <form className="portal-surface portal-auth-form" onSubmit={changeEmail}><h2>Adresse e-mail</h2><p>Adresse actuelle : {profile.email}</p><label>Nouvelle adresse<input type="email" name="email" required maxLength={180} /></label><button className="portal-action secondary" disabled={busy}>Demander le changement</button></form>

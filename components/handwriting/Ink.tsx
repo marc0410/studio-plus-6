@@ -56,10 +56,10 @@ export function Ink({ children, type = 'circle', color = 'ink', trigger = 'enter
     '--ink-stroke-width': mobile ? `${inkTokens.mobileWidth}px` : `${inkTokens.width}px`,
     '--ink-delay': `${delay}s`,
   } as CSSProperties;
-  return <span ref={root} className={`ink ink--${type} ink--${trigger} ${className}`.trim()} style={style} data-ink-trigger={trigger} data-ink-delay={delay} data-ink-duration={duration ?? (type === 'circle' ? inkTokens.circleDuration : inkTokens.lineDuration)} data-ink-type={type}>
+  return <span ref={root} suppressHydrationWarning className={`ink ink--${type} ink--${trigger} ${className}`.trim()} style={style} data-ink-trigger={trigger} data-ink-delay={delay} data-ink-duration={duration ?? (type === 'circle' ? inkTokens.circleDuration : inkTokens.lineDuration)} data-ink-type={type}>
     <span className="ink__content">{children}</span>
     <svg className="ink__svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      {paths.map((d, index) => <path key={`${seed}-${index}`} className="ink__path" d={d} pathLength="1" strokeDasharray="1" strokeDashoffset="0" data-ink-head={type === 'arrow' && index > 0 ? 'true' : undefined} data-ink-linear={type === 'underline' || type === 'wave' || type === 'double' ? 'true' : undefined} />)}
+      {paths.map((d, index) => <path key={`${seed}-${index}`} suppressHydrationWarning className="ink__path" d={d} pathLength="1" strokeDasharray="1" strokeDashoffset="0" data-ink-head={type === 'arrow' && index > 0 ? 'true' : undefined} data-ink-linear={type === 'underline' || type === 'wave' || type === 'double' ? 'true' : undefined} />)}
     </svg>
     {label && <span className="ink__label" aria-hidden="true">{label}</span>}
   </span>;

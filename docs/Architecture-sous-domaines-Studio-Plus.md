@@ -1,5 +1,86 @@
 # Architecture des sous-domaines Studio+
 
+> **Plan de mise en œuvre retenu après comparaison avec `docs/voila.md` et le dépôt.** Les sous-domaines ne sont pas encore configurés dans le code. Démarrer par les domaines de développement sur Preview, puis basculer la production après validation complète.
+
+## Décisions retenues
+
+1. Garder un dépôt, un projet Next.js et un projet Vercel.
+2. Garder les sessions isolées par sous-domaine au début. Les utilisateurs se connectent séparément sur l’espace qu’ils utilisent. Ne pas activer un cookie `Domain=.studioplusci.com` pour l’instant.
+3. Garder `/reserver` canonique sur `app`. Les boutons du site public devront ouvrir `app`; les anciennes URL `www/reserver` redirigeront temporairement vers `app/reserver`.
+4. Garder une connexion par espace : client sur `app`, équipe sur `team`, gestion sur `admin`. `/connexion`, récupération et callback seront servis sur ces trois domaines; `/inscription` uniquement sur `app`.
+5. Le callback OAuth/e-mail reste sur le même hôte qui a lancé le flux PKCE. L’URL `next` est un chemin local validé, jamais une URL complète fournie par le navigateur.
+6. Les invitations STAFF arrivent sur `team`; les invitations MANAGER sur `admin`. `ADMIN` ne peut pas être créé par le formulaire d’invitation équipe existant sans décision produit distincte.
+7. L’API reste same-origin : les formulaires appellent `/api/...` depuis le même hôte et les cookies sont propres à celui-ci. Aucun CORS entre sous-domaines.
+8. Hôte non prévu ou route non autorisée : 404. Route d’un espace demandée sur le mauvais sous-domaine : redirection temporaire 307 vers le domaine canonique pendant Preview, puis 308 après stabilisation. Conserver temporairement les anciennes URL sur `www`.
+9. Pour le premier essai dev, conserver `dev.studioplusci.com` sur la branche Preview `dev` pour le site et les tests actuels. Créer `dev-app`, `dev-team`, `dev-admin` (et `dev-www` seulement si un domaine distinct pour le site public est utile) sous `studioplusci.com`, rattachés à la branche Preview `dev`. Les domaines de production déjà ajoutés (`app`, `team`, `admin`) doivent rester assignés à Production. Ne pas utiliser Dynamic DNS.
+
+### Valeurs de départ à configurer
+
+#### Vercel → Project → Settings → Domains
+
+Ajouter les hôtes de développement au projet `studio-plus`, avec branche Preview `dev` :
+
+| Hôte | Branche / cible |
+| --- | --- |
+| `dev.studioplusci.com` | Déjà configuré : Preview, branche `dev` |
+| `dev-app.studioplusci.com` | Preview, branche `dev` |
+| `dev-team.studioplusci.com` | Preview, branche `dev` |
+| `dev-admin.studioplusci.com` | Preview, branche `dev` |
+| `dev-www.studioplusci.com` | Optionnel : Preview, branche `dev`, uniquement pour tester le site public séparément |
+
+Créer chez le DNS autoritaire les enregistrements exactement indiqués par Vercel pour chaque domaine et attendre que Vercel indique le domaine vérifié et le certificat SSL actif. Ne pas reprendre les valeurs d’un autre projet ou inventer une cible CNAME. Les domaines sans préfixe `dev-` montrés comme Production ne doivent pas être affectés à Preview.
+
+#### Vercel → Environment Variables → Preview (branche `dev`)
+
+Ajouter en type Config (ces noms de domaine ne sont pas des secrets) :
+
+```env
+NEXT_PUBLIC_HOST_WWW=dev-www.studioplusci.com
+NEXT_PUBLIC_HOST_APP=dev-app.studioplusci.com
+NEXT_PUBLIC_HOST_TEAM=dev-team.studioplusci.com
+NEXT_PUBLIC_HOST_ADMIN=dev-admin.studioplusci.com
+```
+
+Dans le même scope Preview, conserver toutes les clés Supabase et la base de **dev**. Ne pas recopier de variable de base ou clé secrète Supabase de Production. `APP_URL` ne peut plus représenter à lui seul les quatre origines : il faudra remplacer son usage dans les routes par une fonction d’origine canonique / hôte courant avant d’activer le routage. En attendant ce changement, ne pas prétendre que les quatre espaces sont prêts.
+
+#### Supabase Auth → URL Configuration → projet dev
+
+Avant que les flux soient adaptés, ne modifier que les Redirect URLs nécessaires aux essais actuels. Après implémentation des quatre hôtes, utiliser :
+
+- **Site URL** : `https://dev-app.studioplusci.com` (fallback client, pas URL unique de tous les parcours).
+- **Redirect URLs exactes** :
+  - `https://dev-app.studioplusci.com/auth/callback`
+  - `https://dev-team.studioplusci.com/auth/callback`
+  - `https://dev-admin.studioplusci.com/auth/callback`
+  - `https://dev-team.studioplusci.com/auth/accept-invite`
+  - `https://dev-admin.studioplusci.com/auth/accept-invite`
+  - callbacks locaux explicites, pendant les tests locaux : `http://app.localhost:3000/auth/callback`, `http://team.localhost:3000/auth/callback`, `http://admin.localhost:3000/auth/callback`.
+
+Ne pas mettre `*.studioplusci.com`, `*.vercel.app` ou `*.localhost` comme autorisation générale. Supabase dev reste séparé de Supabase prod.
+
+#### DNS / certificats
+
+Le panneau **Dynamic DNS** de cPanel n’est pas le bon outil. Il sert à actualiser une IP dynamique. Pour Vercel, utiliser le gestionnaire DNS qui détient réellement les nameservers du domaine et ajouter les records fournis dans Vercel. Vérifier le certificat HTTPS de chaque hôte avant d’y configurer Supabase Auth.
+
+#### Production — à faire après validation dev seulement
+
+À ne pas créer ni basculer aujourd’hui. Après validation E2E, ajouter au même projet Vercel : `www.studioplusci.com`, `app.studioplusci.com`, `team.studioplusci.com`, `admin.studioplusci.com`, chacun en Production. Le domaine racine `studioplusci.com` redirige vers `www`. Les variables Production utilisent exclusivement le projet Supabase prod et les hôtes sans préfixe `dev-`. Ajouter alors les callbacks prod équivalents dans Supabase prod.
+
+## Séquence d’implémentation dans le dépôt
+
+Le dépôt est encore en routage par chemins : `proxy.ts` rafraîchit Supabase mais ne résout pas les hôtes. De plus, `APP_URL` est utilisé par les contrôles d’origine, les callbacks de connexion/récupération, les liens d’e-mail, les invitations et le cron. Il faut effectuer ces travaux avant d’ajouter les domaines de prod :
+
+1. Ajouter une configuration serveur validée pour les quatre hôtes de l’environnement courant, leurs URL publiques et les rôles permis; refuser les hôtes inconnus sans faire confiance à `X-Forwarded-Host` non vérifié.
+2. Ajouter une fonction pure de résolution de routes et ses tests : `app /` → `/espace`, `team /` → `/equipe`, `admin /` → `/gestion`; chemins internes sur mauvais hôte → 307 vers le bon espace; chemins inconnus → 404. Exclure correctement assets Next, API, crons et callbacks. Les crons Vercel doivent continuer à recevoir `/api/...` sur l’hôte Production assigné par Vercel et valider leur `CRON_SECRET`.
+3. Modifier le proxy tout en préservant les cookies rafraîchis pour le rendu serveur. Vérifier avec la version installée de Next et `@supabase/ssr`; le code exemple de `voila.md` n’est pas à copier sans adaptation.
+4. Adapter les liens du site public vers `app` pour réservation / connexion et vers les espaces appropriés. Garder `www/reserver` comme redirection transitoire, pas une deuxième réservation.
+5. Adapter le formulaire de connexion au rôle et au domaine courant. Avec des sessions séparées, ne jamais connecter sur `app` puis rediriger vers `team` ou `admin`; offrir le formulaire sur chaque espace, n’accepter que les rôles de cet espace et afficher un message/lien vers le bon espace en cas de rôle incompatible. La création de compte reste réservée au client.
+6. Faire pointer l’inscription et la récupération vers le callback du même hôte que le formulaire. Préserver `next` comme chemin relatif validé. Router l’acceptation d’invitation vers `team` pour STAFF et `admin` pour MANAGER.
+7. Remplacer l’usage généralisé d’`APP_URL` par des URL de destinations explicites : hôte courant pour callbacks, `app` pour réservation/client, `www` pour invitation de séance, `team`/`admin` pour invitation membre, domaine correct pour les e-mails de notification. Le cron ne doit pas dériver son origine d’un domaine utilisateur.
+8. Remplacer la validation des mutations par une vérification centralisée `Origin === origin de la requête` avec origines autorisées de l’environnement. Maintenir les vérifications rôle/propriété dans les routes API et pages; un layout seul n’est pas la barrière d’autorisation.
+9. Ajouter `noindex` aux espaces privés et `no-referrer` aux URL à jeton; vérifier robots, analytics et absence de données personnelles/jetons dans les événements.
+10. Tester en local puis sur les hôtes Preview : tous les chemins par hôte, callback PKCE, récupération, invitation STAFF/MANAGER, renouvellement de session, API same-origin, contrôle de propriété et accès refusé. Ensuite seulement configurer Production.
+
 ## Décision
 
 Pour Studio+ la séparation en quatre sous-domaines est une bonne cible : elle rend les espaces faciles à reconnaître tout en gardant un seul projet Next.js, un dépôt et un déploiement Vercel. Les espaces peuvent partager les composants, les routes API, Supabase et Prisma.
