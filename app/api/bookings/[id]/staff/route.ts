@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProfile } from "@/lib/current-profile";
 import { safelySendStudioEmail } from "@/lib/email";
+import { spaceOrigin } from "@/lib/hosts";
 
 export const runtime = "nodejs";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
-function sameOrigin(request: Request) { const origin = request.headers.get("origin"); try { return !!origin && new URL(origin).origin === (process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin); } catch { return false; } }
+function sameOrigin(request: Request) { const origin = request.headers.get("origin"); try { return !!origin && new URL(origin).origin === (new URL(request.url).origin); } catch { return false; } }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const profile = await getCurrentProfile();
@@ -44,8 +45,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const existed = await prisma.bookingStaff.findUnique({ where: { bookingId_staffId: { bookingId: id, staffId: staff.id } } });
   await prisma.bookingStaff.upsert({ where: { bookingId_staffId: { bookingId: id, staffId: staff.id } }, create: { bookingId: id, staffId: staff.id }, update: {} });
   if (!existed) {
-    const origin = process.env.APP_URL ?? new URL(request.url).origin;
-    await safelySendStudioEmail({ to: staff.email, subject: "Vous êtes affecté à une séance Studio+", title: "Une séance vous a été affectée.", body: `${staff.fullName}, vous êtes affecté à « ${booking.title} » le ${booking.date} à ${booking.time}.`, actionLabel: "Ouvrir la séance", actionUrl: `${origin}/equipe/seances`, event: "STAFF_ASSIGNED" });
+    await safelySendStudioEmail({ to: staff.email, subject: "Vous êtes affecté à une séance Studio+", title: "Une séance vous a été affectée.", body: `${staff.fullName}, vous êtes affecté à « ${booking.title} » le ${booking.date} à ${booking.time}.`, actionLabel: "Ouvrir la séance", actionUrl: `${spaceOrigin("team")}/seances`, event: "STAFF_ASSIGNED" });
   }
   return json({ ok: true, message: "Membre affecté à la séance." }, 201);
 }
@@ -65,8 +65,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   ]);
   await prisma.bookingStaff.deleteMany({ where: { bookingId: id, staffId: body.staffId } });
   if (assignment && booking) {
-    const origin = process.env.APP_URL ?? new URL(request.url).origin;
-    await safelySendStudioEmail({ to: assignment.staff.email, subject: "Votre affectation a changé", title: "Vous avez été retiré d’une séance.", body: `${assignment.staff.fullName}, vous n’êtes plus affecté à « ${booking.title} » le ${booking.date} à ${booking.time}.`, actionLabel: "Ouvrir mon espace", actionUrl: `${origin}/equipe`, event: "STAFF_UNASSIGNED" });
+    await safelySendStudioEmail({ to: assignment.staff.email, subject: "Votre affectation a changé", title: "Vous avez été retiré d’une séance.", body: `${assignment.staff.fullName}, vous n’êtes plus affecté à « ${booking.title} » le ${booking.date} à ${booking.time}.`, actionLabel: "Ouvrir mon espace", actionUrl: `${spaceOrigin("team")}/`, event: "STAFF_UNASSIGNED" });
   }
   return json({ ok: true, message: "Affectation retirée." });
 }

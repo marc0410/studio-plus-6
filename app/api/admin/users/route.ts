@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { hasSameOrigin } from "@/lib/request-security";
 import { getCurrentProfile } from "@/lib/current-profile";
 import { APP_ROLES } from "@/lib/roles";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -30,7 +31,7 @@ export async function PATCH(request: Request) {
   const access = await authorize();
   if ("error" in access) return access.error;
   const origin = request.headers.get("origin");
-  if (!origin || new URL(origin).origin !== new URL(request.url).origin) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
+  if (!hasSameOrigin(request)) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
   try {
     const body = await request.json() as { id?: unknown; role?: unknown; isActive?: unknown };
     if (typeof body.id !== "string" || !APP_ROLES.includes(body.role as typeof APP_ROLES[number]) || (body.isActive !== undefined && typeof body.isActive !== "boolean")) {

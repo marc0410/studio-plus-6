@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { safelySendStudioEmail } from "@/lib/email";
+import { spaceOrigin } from "@/lib/hosts";
+import { hasSameOrigin } from "@/lib/request-security";
 
 export const dynamic = "force-dynamic";
 const tokenHash = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -37,7 +39,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const origin = request.headers.get("origin");
-  if (!origin || new URL(origin).origin !== new URL(request.url).origin) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
+  if (!hasSameOrigin(request)) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
   try {
     const { token } = await params;
     const body = await request.json() as { response?: unknown; note?: unknown; bio?: unknown; socialLinks?: unknown; imageConsent?: unknown; proposedDate?: unknown; proposedTime?: unknown };
@@ -74,7 +76,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       title: "Un invité a répondu.",
       body: `${invitation.name} a ${status === "ACCEPTED" ? "accepté" : "décliné"} l’invitation pour « ${invitation.booking.title} » (${invitation.booking.date} à ${invitation.booking.time}).${invitation.proposedDate ? ` Créneau proposé : ${invitation.proposedDate} à ${invitation.proposedTime}.` : ""}`,
       actionLabel: "Ouvrir la gestion",
-      actionUrl: `${process.env.APP_URL ?? new URL(request.url).origin}/gestion/reservations`,
+      actionUrl: `${spaceOrigin("admin")}/reservations`,
       event: "PODCAST_INVITATION_RESPONSE",
     });
     return Response.json({ ok: true, message: status === "ACCEPTED" ? "Votre présence est confirmée." : "Votre réponse a été transmise au studio." });
@@ -86,7 +88,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const origin = request.headers.get("origin");
-  if (!origin || new URL(origin).origin !== new URL(request.url).origin) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
+  if (!hasSameOrigin(request)) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
   try {
     const { token } = await params;
     const body = await request.json() as { imageConsent?: unknown };

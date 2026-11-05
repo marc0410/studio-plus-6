@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProfile } from "@/lib/current-profile";
+import { hasSameOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,8 +19,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const origin = request.headers.get("origin");
-  try { if (!origin || new URL(origin).origin !== new URL(request.url).origin) return json({ error: "Origine non autorisée." }, 403); } catch { return json({ error: "Origine non autorisée." }, 403); }
+  if (!hasSameOrigin(request)) return json({ error: "Origine non autorisée." }, 403);
   const profile = await getCurrentProfile();
   if (!profile) return json({ error: "La session d’invitation n’a pas été créée." }, 401);
   const invitation = await prisma.teamInvitation.findUnique({ where: { userId: profile.id } });

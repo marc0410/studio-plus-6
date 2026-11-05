@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProfile } from "@/lib/current-profile";
+import { spaceOrigin } from "@/lib/hosts";
+import { hasSameOrigin } from "@/lib/request-security";
 import { safelySendStudioEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
@@ -20,8 +22,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const origin = request.headers.get("origin");
-  if (!origin || new URL(origin).origin !== (process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin)) return json({ error: "Origine non autorisée." }, 403);
+  if (!hasSameOrigin(request)) return json({ error: "Origine non autorisée." }, 403);
   const profile = await getCurrentProfile();
   if (!profile) return json({ error: "Connectez-vous pour continuer." }, 401);
   const { id } = await params;
@@ -51,7 +52,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return true;
     });
     if (!confirmed) return json({ error: "Cette demande a déjà été traitée." }, 409);
-    await safelySendStudioEmail({ to: booking.email, subject: "Votre séance Studio+ est confirmée", title: "Votre séance est confirmée.", body: `${booking.title} · ${booking.date} à ${booking.time}. Montant convenu : ${new Intl.NumberFormat("fr-FR").format(Number(input.amount))} FCFA. Le paiement se fera sur place.`, actionLabel: "Voir ma réservation", actionUrl: `${process.env.APP_URL ?? new URL(request.url).origin}/espace`, event: "BOOKING_CONFIRMED" });
+    await safelySendStudioEmail({ to: booking.email, subject: "Votre séance Studio+ est confirmée", title: "Votre séance est confirmée.", body: `${booking.title} · ${booking.date} à ${booking.time}. Montant convenu : ${new Intl.NumberFormat("fr-FR").format(Number(input.amount))} FCFA. Le paiement se fera sur place.`, actionLabel: "Voir ma réservation", actionUrl: `${spaceOrigin("app")}/`, event: "BOOKING_CONFIRMED" });
     return json({ ok: true, message: "La séance est confirmée." });
   }
 
@@ -66,7 +67,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return true;
     });
     if (!cancelled) return json({ error: "Cette séance a été modifiée entre-temps. Actualisez la page." }, 409);
-    await safelySendStudioEmail({ to: booking.email, subject: "Mise à jour de votre séance Studio+", title: "Votre séance a été annulée.", body: `${booking.title} · ${booking.date} à ${booking.time}. Contactez le studio si vous souhaitez choisir un autre créneau.`, actionLabel: "Faire une nouvelle demande", actionUrl: `${process.env.APP_URL ?? new URL(request.url).origin}/reserver`, event: "BOOKING_CANCELLED" });
+    await safelySendStudioEmail({ to: booking.email, subject: "Mise à jour de votre séance Studio+", title: "Votre séance a été annulée.", body: `${booking.title} · ${booking.date} à ${booking.time}. Contactez le studio si vous souhaitez choisir un autre créneau.`, actionLabel: "Faire une nouvelle demande", actionUrl: `${spaceOrigin("app")}/reserver`, event: "BOOKING_CANCELLED" });
     return json({ ok: true, message: "La séance est annulée." });
   }
 

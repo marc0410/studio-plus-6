@@ -1,15 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { isLegacySingleHost, spaceFromHost } from "@/lib/hosts";
 
-function safeNextPath(value: string | null) {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return "/espace";
-  return value;
+function safeNextPath(value: string | null, request: NextRequest) {
+  const host = request.headers.get("host");
+  const legacy = isLegacySingleHost(host);
+  const space = spaceFromHost(host);
+  const fallback = legacy ? "/espace" : "/";
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\u0000-\u001f]/.test(value)) return fallback;
+  const pathname = value.split("?", 1)[0];
+  if (legacy) return value;
+  if (space === "app" && ["/", "/nouveau-mot-de-passe", "/reserver"].some(path => pathname === path || pathname.startsWith(`${path}/`))) return value;
+  if ((space === "team" || space === "admin") && ["/", "/nouveau-mot-de-passe"].some(path => pathname === path || pathname.startsWith(`${path}/`))) return value;
+  return fallback;
 }
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
-  const next = safeNextPath(request.nextUrl.searchParams.get("next"));
+  const next = safeNextPath(request.nextUrl.searchParams.get("next"), request);
   if (!code) return NextResponse.redirect(new URL("/connexion?error=confirmation", request.url));
 
   try {

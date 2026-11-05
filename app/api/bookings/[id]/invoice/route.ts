@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProfile } from "@/lib/current-profile";
+import { hasSameOrigin } from "@/lib/request-security";
 import { createStudioInvoicePdf } from "@/lib/invoice-pdf";
 import { safelySendStudioEmail } from "@/lib/email";
 
@@ -9,8 +10,7 @@ export const runtime = "nodejs";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const origin = request.headers.get("origin");
-  if (!origin || new URL(origin).origin !== new URL(request.url).origin) return json({ error: "Origine non autorisée." }, 403);
+  if (!hasSameOrigin(request)) return json({ error: "Origine non autorisée." }, 403);
   const profile = await getCurrentProfile();
   if (!profile) return json({ error: "Connectez-vous pour continuer." }, 401);
   if (!["ADMIN", "MANAGER"].includes(profile.role)) return json({ error: "Seul le studio peut envoyer une facture." }, 403);

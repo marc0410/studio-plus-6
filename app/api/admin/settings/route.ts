@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { hasSameOrigin } from "@/lib/request-security";
 import { getCurrentProfile } from "@/lib/current-profile";
 import { DEFAULT_CONFIG, validateConfig } from "@/lib/studio-domain";
 import { Prisma } from "@/generated/prisma/client";
@@ -28,7 +29,7 @@ export async function PATCH(request: Request) {
   if ("error" in access) return access.error;
   try {
     const origin = request.headers.get("origin");
-    if (!origin || new URL(origin).origin !== new URL(request.url).origin) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
+    if (!hasSameOrigin(request)) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
     const body = await request.json() as { config?: unknown };
     const config = validateConfig(body.config);
     await prisma.studioSettings.upsert({

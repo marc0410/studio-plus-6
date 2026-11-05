@@ -3,11 +3,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProfile } from "@/lib/current-profile";
 import { safelySendStudioEmail } from "@/lib/email";
+import { spaceOrigin } from "@/lib/hosts";
 
 export const runtime = "nodejs";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const roles = ["Invité", "Co-intervenant", "Technicien"];
-function sameOrigin(request: Request) { const origin = request.headers.get("origin"); try { return !!origin && new URL(origin).origin === (process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin); } catch { return false; } }
+function sameOrigin(request: Request) { const origin = request.headers.get("origin"); try { return !!origin && new URL(origin).origin === (new URL(request.url).origin); } catch { return false; } }
 
 async function allowedBooking(id: string, profile: NonNullable<Awaited<ReturnType<typeof getCurrentProfile>>>) {
   const manager = ["ADMIN", "MANAGER"].includes(profile.role);
@@ -46,7 +47,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       await tx.guestInvitation.create({ data: { bookingId: id, name, email, tokenHash, expiresAt: new Date(Date.now() + 30 * 86400000) } });
       return person;
     });
-    const inviteUrl = `${process.env.APP_URL ?? new URL(request.url).origin}/invite/${rawToken}`;
+    const inviteUrl = `${spaceOrigin("www")}/invite/${rawToken}`;
     const emailSent = await safelySendStudioEmail({ to: email, subject: "Studio+ vous invite à une séance podcast", title: "Vous êtes invité(e) au studio.", body: `Bonjour ${name}, vous êtes invité(e) à participer à « ${booking.title} », le ${booking.date} à ${booking.time}. Répondez à l’invitation en suivant le lien.`, actionLabel: "Répondre à l’invitation", actionUrl: inviteUrl, event: "PODCAST_INVITATION" });
     return json({ participant, emailSent, message: emailSent ? "Participant ajouté et invitation envoyée." : "Participant ajouté. L’e-mail pourra être renvoyé en créant une nouvelle invitation." }, 201);
   } catch (error) {

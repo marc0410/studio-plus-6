@@ -3,6 +3,7 @@ import { getCurrentProfile } from "@/lib/current-profile";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendSupabaseAuthEmail } from "@/lib/supabase/auth-email";
 import { createHash } from "node:crypto";
+import { spaceOrigin } from "@/lib/hosts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,14 +26,13 @@ function digest(token: string) { return createHash("sha256").update(token).diges
 async function sendInvite(userId: string, tokenHash?: string) {
   const invitation = await prisma.teamInvitation.findUnique({ where: { userId } });
   if (!invitation || invitation.status !== "PENDING") return Response.json({ error: "Cette invitation n’est plus en attente." }, { status: 409 });
-  const appUrl = process.env.APP_URL;
-  if (!appUrl) return Response.json({ error: "APP_URL n’est pas configurée." }, { status: 503 });
+  const inviteOrigin = spaceOrigin(invitation.role === "STAFF" ? "team" : "admin");
   const admin = createSupabaseAdminClient();
   if (!tokenHash) {
     const { data, error } = await admin.auth.admin.generateLink({
       type: "invite",
       email: invitation.email,
-      options: { data: { full_name: invitation.fullName }, redirectTo: `${appUrl}/auth/callback?next=${invitation.role === "STAFF" ? "%2Fequipe" : "%2Fgestion"}` },
+      options: { data: { full_name: invitation.fullName }, redirectTo: `${inviteOrigin}/auth/callback?next=%2F` },
     });
     if (error || !data.properties.hashed_token) {
       console.error("Could not generate internal team invitation", error?.message);
@@ -43,7 +43,7 @@ async function sendInvite(userId: string, tokenHash?: string) {
   const nextExpiry = new Date(Date.now() + 7 * 86400000);
   await prisma.teamInvitation.update({ where: { userId }, data: { tokenDigest: digest(tokenHash), expiresAt: nextExpiry } });
   const next = invitation.role === "STAFF" ? "/equipe" : "/gestion";
-  const actionLink = `${appUrl.replace(/\/$/, "")}/auth/accept-invite?token_hash=${encodeURIComponent(tokenHash)}&next=${encodeURIComponent(next)}`;
+  const actionLink = `${inviteOrigin}/auth/accept-invite?token_hash=${encodeURIComponent(tokenHash)}&next=${encodeURIComponent(next)}`;
   try {
     await sendSupabaseAuthEmail({
       to: invitation.email,
@@ -94,13 +94,12 @@ export async function POST(request: Request) {
       return Response.json({ ok: true, existing: true, message: `Le compte existant a maintenant le rôle ${profile.role}.` });
     }
 
-    const appUrl = process.env.APP_URL;
-    if (!appUrl) return Response.json({ error: "APP_URL n’est pas configurée." }, { status: 503 });
+    const inviteOrigin = spaceOrigin(role === "STAFF" ? "team" : "admin");
     const admin = createSupabaseAdminClient();
     const { data, error } = await admin.auth.admin.generateLink({
       type: "invite",
       email,
-      options: { data: { full_name: name }, redirectTo: `${appUrl}/auth/callback?next=${role === "STAFF" ? "%2Fequipe" : "%2Fgestion"}` },
+      options: { data: { full_name: name }, redirectTo: `${inviteOrigin}/auth/callback?next=%2F` },
     });
     if (error || !data.user || !data.properties.hashed_token) {
       console.error("Internal team account creation failed", error?.message);

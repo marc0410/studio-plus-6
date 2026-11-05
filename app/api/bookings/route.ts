@@ -5,6 +5,7 @@ import { getCurrentProfile } from "@/lib/current-profile";
 import { DEFAULT_CONFIG, slotTimes, validateBooking, validateConfig } from "@/lib/studio-domain";
 import { ROLE_HOME } from "@/lib/roles";
 import { safelySendStudioEmail } from "@/lib/email";
+import { spaceOrigin } from "@/lib/hosts";
 import { expirePendingBookings } from "@/lib/booking-expiration";
 
 export const runtime = "nodejs";
@@ -13,7 +14,7 @@ const json = (body: unknown, status = 200) => NextResponse.json(body, { status, 
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
-  try { return new URL(origin).origin === (process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin); }
+  try { return new URL(origin).origin === (new URL(request.url).origin); }
   catch { return false; }
 }
 async function readConfig() {
@@ -93,10 +94,11 @@ export async function POST(request: Request) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2002", "P2034"].includes(error.code)) return json({ error: "Ce créneau vient d’être pris. Choisissez-en un autre." }, 409);
       throw error;
     }
-    const origin = process.env.APP_URL ?? new URL(request.url).origin;
+    const appOrigin = spaceOrigin("app");
+    const adminOrigin = spaceOrigin("admin");
     await Promise.all([
-      safelySendStudioEmail({ to: profile.email, subject: "Votre demande de séance est bien reçue", title: "Votre demande est arrivée au studio.", body: `${service.name} · ${date} à ${time}. L’équipe vous confirmera le créneau et le montant. Aucun paiement en ligne n’est demandé.`, actionLabel: "Ouvrir mon espace", actionUrl: `${origin}/espace`, event: "BOOKING_REQUESTED_CLIENT" }),
-      process.env.STUDIO_BOOKING_EMAIL ? safelySendStudioEmail({ to: process.env.STUDIO_BOOKING_EMAIL, subject: "Nouvelle demande de réservation", title: "Une nouvelle demande attend votre réponse.", body: `${profile.fullName} · ${service.name} · ${date} à ${time}.`, actionLabel: "Ouvrir la gestion", actionUrl: `${origin}/gestion/reservations`, event: "BOOKING_REQUESTED_STUDIO" }) : Promise.resolve(false),
+      safelySendStudioEmail({ to: profile.email, subject: "Votre demande de séance est bien reçue", title: "Votre demande est arrivée au studio.", body: `${service.name} · ${date} à ${time}. L’équipe vous confirmera le créneau et le montant. Aucun paiement en ligne n’est demandé.`, actionLabel: "Ouvrir mon espace", actionUrl: `${appOrigin}/`, event: "BOOKING_REQUESTED_CLIENT" }),
+      process.env.STUDIO_BOOKING_EMAIL ? safelySendStudioEmail({ to: process.env.STUDIO_BOOKING_EMAIL, subject: "Nouvelle demande de réservation", title: "Une nouvelle demande attend votre réponse.", body: `${profile.fullName} · ${service.name} · ${date} à ${time}.`, actionLabel: "Ouvrir la gestion", actionUrl: `${adminOrigin}/reservations`, event: "BOOKING_REQUESTED_STUDIO" }) : Promise.resolve(false),
     ]);
     return json({ id, message: "Votre demande est enregistrée. Le studio doit encore confirmer la séance et le tarif." }, 201);
   } catch (error) {

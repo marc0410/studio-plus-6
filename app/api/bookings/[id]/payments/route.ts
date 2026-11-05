@@ -1,5 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { hasSameOrigin } from "@/lib/request-security";
 import { getCurrentProfile } from "@/lib/current-profile";
 
 const methods = ["CASH", "WAVE", "ORANGE_MONEY", "MTN_MOMO", "BANK_TRANSFER", "OTHER"] as const;
@@ -8,8 +9,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const profile = await getCurrentProfile();
   if (!profile) return Response.json({ error: "Connectez-vous pour continuer." }, { status: 401 });
   if (!["ADMIN", "MANAGER"].includes(profile.role)) return Response.json({ error: "Seul le studio peut enregistrer un paiement." }, { status: 403 });
-  const origin = request.headers.get("origin");
-  if (!origin || new URL(origin).origin !== new URL(request.url).origin) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
+  if (!hasSameOrigin(request)) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
 
   try {
     const { id } = await params;

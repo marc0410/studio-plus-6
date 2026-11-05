@@ -6,6 +6,7 @@ import { getCurrentProfile } from "@/lib/current-profile";
 import { DEFAULT_CONFIG, DEFAULT_SERVICES, slotTimes, validDate, validateBooking, validateConfig } from "@/lib/studio-domain";
 import { ROLE_HOME } from "@/lib/roles";
 import { safelySendStudioEmail } from "@/lib/email";
+import { spaceOrigin } from "@/lib/hosts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
   try {
-    const expected = process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin;
+    const expected = new URL(request.url).origin;
     return new URL(origin).origin === expected;
   } catch {
     return false;
@@ -167,7 +168,8 @@ async function mutate(request: Request) {
         }
         throw error;
       }
-      const origin = process.env.APP_URL ?? new URL(request.url).origin;
+      const appOrigin = spaceOrigin("app");
+      const adminOrigin = spaceOrigin("admin");
       await Promise.all([
         safelySendStudioEmail({
           to: profile.email,
@@ -175,7 +177,7 @@ async function mutate(request: Request) {
           title: "Votre demande est arrivée au studio.",
           body: `${service.name} · ${body.date} à ${body.time}. L’équipe Studio+ vous confirmera le créneau et le montant. Aucun paiement en ligne n’est demandé.`,
           actionLabel: "Ouvrir mon espace",
-          actionUrl: `${origin}/espace`,
+          actionUrl: `${appOrigin}/`,
           event: "BOOKING_REQUESTED_CLIENT",
         }),
         process.env.STUDIO_BOOKING_EMAIL ? safelySendStudioEmail({
@@ -184,7 +186,7 @@ async function mutate(request: Request) {
           title: "Une nouvelle demande attend votre réponse.",
           body: `${profile.fullName} · ${service.name} · ${body.date} à ${body.time}.`,
           actionLabel: "Ouvrir la gestion",
-          actionUrl: `${origin}/gestion/reservations`,
+          actionUrl: `${adminOrigin}/reservations`,
           event: "BOOKING_REQUESTED_STUDIO",
         }) : Promise.resolve(false),
       ]);
@@ -225,7 +227,7 @@ async function mutate(request: Request) {
           title: "Votre séance est confirmée.",
           body: `${booking.title} · ${booking.date} à ${booking.time}. Montant convenu : ${new Intl.NumberFormat("fr-FR").format(Number(body.amount))} FCFA. Le paiement se fera sur place.`,
           actionLabel: "Voir ma réservation",
-          actionUrl: `${process.env.APP_URL ?? new URL(request.url).origin}/espace`,
+          actionUrl: `${spaceOrigin("app")}/`,
           event: "BOOKING_CONFIRMED",
         });
         return json({ ok: true, message: "La séance est confirmée." });
@@ -246,7 +248,7 @@ async function mutate(request: Request) {
           title: "Votre séance a été annulée.",
           body: `${booking.title} · ${booking.date} à ${booking.time}. Contactez le studio si vous souhaitez choisir un autre créneau.`,
           actionLabel: "Faire une nouvelle demande",
-          actionUrl: `${process.env.APP_URL ?? new URL(request.url).origin}/reserver`,
+          actionUrl: `${spaceOrigin("app")}/reserver`,
           event: "BOOKING_CANCELLED",
         });
         return json({ ok: true, message: "La séance est annulée." });
@@ -281,7 +283,7 @@ async function mutate(request: Request) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return json({ error: "Cette personne est déjà ajoutée à la séance." }, 409);
         throw error;
       }
-      const inviteUrl = `${process.env.APP_URL ?? new URL(request.url).origin}/invite/${rawToken}`;
+      const inviteUrl = `${spaceOrigin("www")}/invite/${rawToken}`;
       const emailSent = await safelySendStudioEmail({
         to: body.email.trim().toLowerCase(),
         subject: "Studio+ vous invite à une séance podcast",

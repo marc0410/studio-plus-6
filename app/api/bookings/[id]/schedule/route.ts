@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentProfile } from "@/lib/current-profile";
 import { DEFAULT_CONFIG, slotTimes, validDate, validateBooking, validateConfig } from "@/lib/studio-domain";
 import { safelySendStudioEmail } from "@/lib/email";
+import { spaceOrigin } from "@/lib/hosts";
 
 export const runtime = "nodejs";
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -11,7 +12,7 @@ const json = (body: unknown, status = 200) => NextResponse.json(body, { status, 
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
-  try { return new URL(origin).origin === (process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin); }
+  try { return new URL(origin).origin === (new URL(request.url).origin); }
   catch { return false; }
 }
 
@@ -72,7 +73,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (error instanceof Error && (error.message.includes("confirmée") || error.message.includes("déjà été traitée"))) return json({ error: error.message }, 409);
       throw error;
     }
-    await safelySendStudioEmail({ to: booking.email, subject: input.decision === "approve" ? "Votre séance a été déplacée" : "Mise à jour de votre demande de changement", title: input.decision === "approve" ? "Nouveau créneau confirmé." : "Votre proposition de créneau n’a pas été retenue.", body: input.decision === "approve" ? `${booking.title} · ${change.newDate} à ${change.newTime}.` : `La séance reste prévue le ${booking.date} à ${booking.time}.`, actionLabel: "Voir ma réservation", actionUrl: `${process.env.APP_URL ?? new URL(request.url).origin}/espace`, event: `BOOKING_RESCHEDULE_${String(input.decision).toUpperCase()}` });
+    await safelySendStudioEmail({ to: booking.email, subject: input.decision === "approve" ? "Votre séance a été déplacée" : "Mise à jour de votre demande de changement", title: input.decision === "approve" ? "Nouveau créneau confirmé." : "Votre proposition de créneau n’a pas été retenue.", body: input.decision === "approve" ? `${booking.title} · ${change.newDate} à ${change.newTime}.` : `La séance reste prévue le ${booking.date} à ${booking.time}.`, actionLabel: "Voir ma réservation", actionUrl: `${spaceOrigin("app")}/`, event: `BOOKING_RESCHEDULE_${String(input.decision).toUpperCase()}` });
     return json({ ok: true, message: input.decision === "approve" ? "Le nouveau créneau est confirmé." : "La proposition a été refusée." });
   }
 

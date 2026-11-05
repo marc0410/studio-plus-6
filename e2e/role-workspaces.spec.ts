@@ -60,6 +60,19 @@ async function expectNoMobileOverflow(page: Page) {
 }
 
 test.describe("espaces par rôle — navigation et affichage", () => {
+  test("les quatre hôtes locaux gardent leur domaine et servent la bonne connexion", async ({ page }) => {
+    for (const [host, expectedReturn] of [
+      ["app.localhost:3000", "/espace"],
+      ["team.localhost:3000", "/equipe"],
+      ["admin.localhost:3000", "/gestion"],
+    ] as const) {
+      await page.goto(`http://${host}/`);
+      await expect(page).toHaveURL(new RegExp(`^http://${host}/connexion\\?return_to=`));
+      await expect(page.getByLabel("Votre e-mail")).toBeVisible();
+      expect(new URL(page.url()).searchParams.get("return_to")).toBe(expectedReturn);
+    }
+  });
+
   test("les quatre espaces demandent une authentification avant affichage", async ({ page }) => {
     for (const route of ["/espace", "/equipe", "/gestion", "/gestion/utilisateurs"]) {
       await page.goto(route);

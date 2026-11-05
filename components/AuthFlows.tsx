@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { trackStudioEvent } from "@/lib/analytics";
+import { publicSiteOrigin } from "@/lib/public-origin";
 
 type Flow = "signup" | "recovery" | "update";
 
@@ -28,7 +29,7 @@ export function AuthFlow({ flow }: { flow: Flow }) {
         if (!response.ok) throw new Error(result.error || "Création impossible.");
         trackStudioEvent("signup_completed", { email_confirmation_required: Boolean(result.needsEmailConfirmation) });
         if (result.needsEmailConfirmation) setSuccess(result.message);
-        else location.assign("/espace");
+        else location.assign(location.host === "dev.studioplusci.com" || location.host === "localhost:3000" ? "/espace" : "/");
       } else if (flow === "recovery") {
         trackStudioEvent("password_recovery_submitted");
         const response = await fetch("/api/auth/recovery", {
@@ -57,7 +58,7 @@ export function AuthFlow({ flow }: { flow: Flow }) {
   const title = flow === "signup" ? "Créer votre espace." : flow === "recovery" ? "Retrouver l’accès." : "Choisir un nouveau mot de passe.";
   const intro = flow === "signup" ? "Un espace pour suivre vos séances et vos projets." : flow === "recovery" ? "Nous vous enverrons un lien sécurisé par e-mail." : "Choisissez un mot de passe de 12 caractères minimum.";
 
-  return <main className="auth-page"><section className="auth-brand"><Link href="/" aria-label="Retour à Studio+"><img src="/studio/assets/logo-light.png" alt="Studio+" width="160" height="65" /></Link><div><span>VOTRE ESPACE CRÉATIF</span><h1>Votre projet.<br />Votre rythme.<br /><em>Studio+.</em></h1><p>Des créations, des séances et des échanges au même endroit.</p></div><small>STUDIO+ — VOTRE PARTENAIRE CRÉATIF</small></section>
+  return <main className="auth-page"><section className="auth-brand"><a href={publicSiteOrigin()} aria-label="Retour à Studio+"><img src="/studio/assets/logo-light.png" alt="Studio+" width="160" height="65" /></a><div><span>VOTRE ESPACE CRÉATIF</span><h1>Votre projet.<br />Votre rythme.<br /><em>Studio+.</em></h1><p>Des créations, des séances et des échanges au même endroit.</p></div><small>STUDIO+ — VOTRE PARTENAIRE CRÉATIF</small></section>
     <section className="auth-form-wrap"><form onSubmit={submit} className="auth-form"><Link className="auth-back" href="/connexion">← Retour à la connexion</Link><h2>{title}</h2><p>{intro}</p>
       {flow === "signup" && <label>Nom complet<input name="name" autoComplete="name" required minLength={2} maxLength={100} /></label>}
       {flow !== "update" && <label>Votre e-mail<input type="email" name="email" autoComplete="email" required maxLength={180} /></label>}

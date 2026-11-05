@@ -2,12 +2,13 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { ROLE_HOME } from "@/lib/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { canonicalSpaceForRole, isLegacySingleHost, roleAllowedOnSpace, spaceFromHost, spaceOrigin } from "@/lib/hosts";
 
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
   try {
-    const expected = process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin;
+    const expected = new URL(request.url).origin;
     return new URL(origin).origin === expected;
   } catch {
     return false;
@@ -55,7 +56,15 @@ export async function signIn(request: Request) {
       await supabase.auth.signOut();
       return Response.json({ error: "Ce compte est désactivé. Contactez le studio." }, { status: 403 });
     }
-    return Response.json({ ok: true, role: profile.role, home: ROLE_HOME[profile.role] }, {
+    const host = new URL(request.url).host;
+    const space = spaceFromHost(host);
+    if (space && !isLegacySingleHost(host) && space !== "www" && !roleAllowedOnSpace(profile.role, space)) {
+      await supabase.auth.signOut();
+      const correctSpace = canonicalSpaceForRole(profile.role);
+      return Response.json({ error: "Ce compte n’a pas accès à cet espace.", correctUrl: `${spaceOrigin(correctSpace)}/connexion` }, { status: 403, headers: { "Cache-Control": "no-store" } });
+    }
+    const home = space && !isLegacySingleHost(host) && space !== "www" ? "/" : ROLE_HOME[profile.role];
+    return Response.json({ ok: true, role: profile.role, home }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
@@ -84,7 +93,7 @@ export async function signUp(request: Request) {
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${process.env.APP_URL ?? new URL(request.url).origin}/auth/callback?next=%2Fespace`,
+        emailRedirectTo: `${new URL(request.url).origin}/auth/callback?next=${encodeURIComponent(spaceFromHost(new URL(request.url).host) === "app" ? "/" : "/espace")}`,
       },
     });
     if (error) return Response.json({ error: "Impossible de créer le compte. Vérifiez l’adresse e-mail ou réessayez." }, { status: 400 });

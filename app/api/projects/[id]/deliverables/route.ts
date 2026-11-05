@@ -12,7 +12,7 @@ const types = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp
 function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   if (!origin) return false;
-  try { return new URL(origin).origin === (process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin); }
+  try { return new URL(origin).origin === (new URL(request.url).origin); }
   catch { return false; }
 }
 

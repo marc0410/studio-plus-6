@@ -1,5 +1,6 @@
 import { getCurrentProfile } from "@/lib/current-profile";
 import { prisma } from "@/lib/prisma";
+import { hasSameOrigin } from "@/lib/request-security";
 import { retryFailedStudioEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
   if (!profile) return Response.json({ error: "Accès réservé à l’équipe de gestion." }, { status: 403 });
   const origin = request.headers.get("origin");
   try {
-    if (!origin || new URL(origin).origin !== new URL(request.url).origin) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
+    if (!hasSameOrigin(request)) return Response.json({ error: "Origine non autorisée." }, { status: 403 });
   } catch {
     return Response.json({ error: "Origine non autorisée." }, { status: 403 });
   }

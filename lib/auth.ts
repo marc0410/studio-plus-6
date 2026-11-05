@@ -33,7 +33,7 @@ export async function getActor(request: Request): Promise<Actor | null> {
   return { id: String(row.id), email: String(row.email), name: String(row.name), admin: row.admin === 1 };
 }
 export function sameOrigin(request: Request): boolean {
-  const expected = process.env.APP_URL ? new URL(process.env.APP_URL).origin : new URL(request.url).origin;
+  const expected = new URL(request.url).origin;
   return request.headers.get('origin') === expected;
 }
 function cookie(token: string, clear = false): string {

@@ -1,6 +1,6 @@
 # Architecture des sous-domaines Studio+
 
-> **Plan de mise en œuvre retenu après comparaison avec `docs/voila.md` et le dépôt.** Les sous-domaines ne sont pas encore configurés dans le code. Démarrer par les domaines de développement sur Preview, puis basculer la production après validation complète.
+> **Architecture de référence et état de mise en œuvre.** Le routage des quatre espaces est implémenté dans le code. Les hôtes de développement doivent être validés en Preview avant tout basculement de production.
 
 ## Décisions retenues
 
@@ -12,7 +12,7 @@
 6. Les invitations STAFF arrivent sur `team`; les invitations MANAGER sur `admin`. `ADMIN` ne peut pas être créé par le formulaire d’invitation équipe existant sans décision produit distincte.
 7. L’API reste same-origin : les formulaires appellent `/api/...` depuis le même hôte et les cookies sont propres à celui-ci. Aucun CORS entre sous-domaines.
 8. Hôte non prévu ou route non autorisée : 404. Route d’un espace demandée sur le mauvais sous-domaine : redirection temporaire 307 vers le domaine canonique pendant Preview, puis 308 après stabilisation. Conserver temporairement les anciennes URL sur `www`.
-9. Pour le premier essai dev, conserver `dev.studioplusci.com` sur la branche Preview `dev` pour le site et les tests actuels. Créer `dev-app`, `dev-team`, `dev-admin` (et `dev-www` seulement si un domaine distinct pour le site public est utile) sous `studioplusci.com`, rattachés à la branche Preview `dev`. Les domaines de production déjà ajoutés (`app`, `team`, `admin`) doivent rester assignés à Production. Ne pas utiliser Dynamic DNS.
+9. Pour le premier essai dev, conserver `dev.studioplusci.com` sur la branche Preview `dev` pour le site public et les parcours historiques. Utiliser `dev-app`, `dev-team` et `dev-admin` pour les espaces dédiés, tous rattachés à la branche Preview `dev`. Les domaines de production déjà ajoutés (`app`, `team`, `admin`) doivent rester assignés à Production. Ne pas utiliser Dynamic DNS.
 
 ### Valeurs de départ à configurer
 
@@ -22,11 +22,11 @@ Ajouter les hôtes de développement au projet `studio-plus`, avec branche Previ
 
 | Hôte | Branche / cible |
 | --- | --- |
-| `dev.studioplusci.com` | Déjà configuré : Preview, branche `dev` |
+| `dev.studioplusci.com` | Déjà configuré : Preview, branche `dev` ; reste l’hôte historique de migration |
 | `dev-app.studioplusci.com` | Preview, branche `dev` |
 | `dev-team.studioplusci.com` | Preview, branche `dev` |
 | `dev-admin.studioplusci.com` | Preview, branche `dev` |
-| `dev-www.studioplusci.com` | Optionnel : Preview, branche `dev`, uniquement pour tester le site public séparément |
+| `dev-www.studioplusci.com` | Non utilisé pour le moment : le site public dev reste sur `dev.studioplusci.com` |
 
 Créer chez le DNS autoritaire les enregistrements exactement indiqués par Vercel pour chaque domaine et attendre que Vercel indique le domaine vérifié et le certificat SSL actif. Ne pas reprendre les valeurs d’un autre projet ou inventer une cible CNAME. Les domaines sans préfixe `dev-` montrés comme Production ne doivent pas être affectés à Preview.
 
@@ -35,7 +35,7 @@ Créer chez le DNS autoritaire les enregistrements exactement indiqués par Verc
 Ajouter en type Config (ces noms de domaine ne sont pas des secrets) :
 
 ```env
-NEXT_PUBLIC_HOST_WWW=dev-www.studioplusci.com
+NEXT_PUBLIC_HOST_WWW=dev.studioplusci.com
 NEXT_PUBLIC_HOST_APP=dev-app.studioplusci.com
 NEXT_PUBLIC_HOST_TEAM=dev-team.studioplusci.com
 NEXT_PUBLIC_HOST_ADMIN=dev-admin.studioplusci.com
@@ -89,7 +89,9 @@ Cette séparation reste une organisation de navigation. Elle ne constitue pas un
 
 ## État actuel du dépôt
 
-Le projet sert actuellement toutes ses pages sur un même hôte et sépare les espaces par chemin. `proxy.ts` rafraîchit la session Supabase, mais ne détecte pas le domaine et ne réécrit pas les URL.
+Le routage par hôte est maintenant implémenté dans le dépôt sur la branche `dev`. Les domaines `dev-app`, `dev-team` et `dev-admin` desservent leurs espaces dédiés ; `dev.studioplusci.com` reste temporairement en mode historique afin de préserver les parcours existants. La production n’est pas basculée par cette implémentation. Avant un déploiement Preview, vérifier que Vercel contient la variable correctement orthographiée `NEXT_PUBLIC_HOST_WWW=dev.studioplusci.com` (le préfixe complet `NEXT_PUBLIC_` est requis), ainsi que les variables `NEXT_PUBLIC_HOST_APP`, `NEXT_PUBLIC_HOST_TEAM` et `NEXT_PUBLIC_HOST_ADMIN`.
+
+Le projet utilise un seul déploiement Next.js pour les hôtes publics et privés. `proxy.ts` rafraîchit la session Supabase puis résout l’hôte et réécrit les URL des espaces dédiés.
 
 | Routes actuelles | Fonction |
 | --- | --- |
