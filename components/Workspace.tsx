@@ -9,6 +9,8 @@ import styles from "@/components/Workspace.module.css";
 import { trackStudioEvent } from "@/lib/analytics";
 import { PortalThemeToggle } from "@/components/PortalThemeToggle";
 import { publicSiteOrigin } from "@/lib/public-origin";
+import { StudioCalendar } from "@/components/StudioCalendar";
+import { useSearchParams } from "next/navigation";
 
 type Participant = { id: string; name: string; email: string; role: string };
 type Payment = { id: string; amount: number; method: string; paidAt: string };
@@ -38,6 +40,9 @@ export function Workspace() {
   const [selectedId, setSelectedId] = useState("");
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [calendarView, setCalendarView] = useState(false);
+  const searchParams = useSearchParams();
+  const requestedBooking = searchParams.get("booking");
 
   const load = useCallback(async () => {
     setError("");
@@ -51,6 +56,7 @@ export function Workspace() {
     }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (requestedBooking && data?.bookings.some(booking => booking.id === requestedBooking)) setSelectedId(requestedBooking); }, [requestedBooking, data]);
 
   async function mutate(body: Record<string, unknown>, method = "POST") {
     const bookingMutation = body.action === "booking" && typeof body.id === "string";
@@ -80,7 +86,8 @@ export function Workspace() {
 
   const bookings = data.bookings;
   const selected = bookings.find(booking => booking.id === selectedId);
-  const upcoming = bookings.filter(booking => !["cancelled", "completed", "no_show"].includes(booking.status) && booking.date >= new Date().toISOString().slice(0, 10));
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Abidjan" }).format(new Date());
+  const upcoming = bookings.filter(booking => !["cancelled", "completed", "no_show"].includes(booking.status) && booking.date >= today);
   const serviceName = (id: string) => data.config.services.find(service => service.id === id)?.name ?? id;
 
   return <main id="contenu" className="workspace-page"><div className="workspace-grid">
@@ -91,8 +98,8 @@ export function Workspace() {
       <p className="workspace-intro">Retrouvez vos séances, leur statut et le suivi de vos paiements sur place.</p>
       {feedback && <p className="status" role="status">{feedback}</p>}
       <div className="stat-grid"><div className="stat">Séances à venir<strong>{upcoming.length}</strong></div><div className="stat">À confirmer<strong>{bookings.filter(booking => booking.status === "requested").length}</strong></div><div className="stat">Participants<strong>{bookings.reduce((total, booking) => total + booking.participants.length, 0)}</strong></div></div>
-      <div id="seances" className="workspace-section-heading"><h2>Vos séances</h2><Link className="button" href="/reserver">Nouvelle séance ↗</Link></div>
-      {bookings.length === 0 ? <section className="workspace-card"><p>Aucune séance pour le moment. Votre prochaine idée peut commencer ici.</p><Link href="/reserver" className="button">Réserver le studio ↗</Link></section> : <div className="data-table-wrap"><table className="data-table"><thead><tr><th>Projet</th><th>Créneau</th><th>Prestation</th><th>Montant</th><th>État</th></tr></thead><tbody>{bookings.map(booking => <tr key={booking.id} aria-selected={selectedId === booking.id}>
+      <div id="seances" className="workspace-section-heading"><h2>Vos séances</h2><div className="workspace-session-actions"><div className="workspace-view-switch" role="group" aria-label="Affichage des séances"><button type="button" aria-pressed={!calendarView} onClick={() => setCalendarView(false)}>Liste</button><button type="button" aria-pressed={calendarView} onClick={() => setCalendarView(true)}>Calendrier</button></div><Link className="button" href="/reserver">Réserver ↗</Link></div></div>
+      {bookings.length === 0 ? <section className="workspace-card"><p>Aucune séance pour le moment. Votre prochaine idée peut commencer ici.</p><Link href="/reserver" className="button">Réserver le studio ↗</Link></section> : calendarView ? <><p className="workspace-calendar-note">Le calendrier présente uniquement vos séances. Pour consulter les créneaux libres et envoyer une demande, choisissez une prestation à réserver.</p><StudioCalendar initialDate={today} bookings={bookings.map(booking => ({ id: booking.id, date: booking.date, time: booking.time, duration: booking.duration, title: booking.title, service: serviceName(booking.service), status: booking.status, href: `/espace?booking=${encodeURIComponent(booking.id)}#seances` }))} /><div className="workspace-calendar-cta"><Link href="/reserver" className="button">Voir les créneaux disponibles ↗</Link></div></> : <div className="data-table-wrap"><table className="data-table"><thead><tr><th>Projet</th><th>Créneau</th><th>Prestation</th><th>Montant</th><th>État</th></tr></thead><tbody>{bookings.map(booking => <tr key={booking.id} aria-selected={selectedId === booking.id}>
         <td><button className="table-row-button" type="button" onClick={() => setSelectedId(selectedId === booking.id ? "" : booking.id)} aria-expanded={selectedId === booking.id}>{booking.title}</button></td>
         <td>{formatDate(booking.date)}<small>{booking.time} · {booking.duration} min</small></td>
         <td>{serviceName(booking.service)}</td><td>{money(booking.amount)}<small>Payé : {money(booking.amountPaid)}</small></td><td>{statusNames[booking.status]}</td>

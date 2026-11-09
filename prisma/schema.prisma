@@ -51,6 +51,8 @@ model Profile {
   bookings    Booking[]
   payments    BookingPayment[] @relation("RecordedPayments")
   assignments BookingStaff[]
+  availabilityRules StaffAvailabilityRule[]
+  availabilityExceptions StaffAvailabilityException[]
   receivedTeamInvitation TeamInvitation?  @relation("InvitedProfile")
   sentTeamInvitations   TeamInvitation[] @relation("InvitedByProfile")
 
@@ -205,6 +207,36 @@ model BookingStaff {
 
   @@id([bookingId, staffId])
   @@map("booking_staff")
+}
+
+model StaffAvailabilityRule {
+  id        String   @id @default(uuid()) @db.Uuid
+  staffId   String   @db.Uuid @map("staff_id")
+  weekday   Int
+  startTime String   @map("start_time") @db.VarChar(5)
+  endTime   String   @map("end_time") @db.VarChar(5)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  staff     Profile  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, weekday, startTime])
+  @@map("staff_availability_rules")
+}
+
+model StaffAvailabilityException {
+  id          String   @id @default(uuid()) @db.Uuid
+  staffId     String   @db.Uuid @map("staff_id")
+  date        String   @db.VarChar(10)
+  isAvailable Boolean  @default(false) @map("is_available")
+  startTime   String?  @map("start_time") @db.VarChar(5)
+  endTime     String?  @map("end_time") @db.VarChar(5)
+  note        String?  @db.VarChar(240)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  staff       Profile  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, date])
+  @@map("staff_availability_exceptions")
 }
 
 model BookingScheduleChange {

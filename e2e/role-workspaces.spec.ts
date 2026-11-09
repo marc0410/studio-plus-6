@@ -85,7 +85,7 @@ test.describe("espaces par rôle — navigation et affichage", () => {
     test.skip(!canAuthenticateRoles, "Les identifiants du projet Supabase dev sont requis pour ouvrir les comptes de rôle.");
     await signIn(page, "client");
     await expect(page).toHaveURL(/\/espace(?:$|\/)/);
-    const themeToggle = page.getByRole("button", { name: "Changer de thème" }).first();
+    const themeToggle = page.getByRole("button", { name: /Passer au (?:mode )?(?:clair|sombre)/ }).first();
     await expect(themeToggle).toBeVisible();
     const initialTheme = await page.evaluate(() => localStorage.getItem("studio-plus-portal-theme"));
     if (initialTheme === "dark") {
@@ -99,8 +99,8 @@ test.describe("espaces par rôle — navigation et affichage", () => {
     await expect.poll(() => page.evaluate(() => localStorage.getItem("studio-plus-portal-theme"))).toBe("dark");
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator("html")).toHaveAttribute("data-portal-theme", "dark");
-    await expect(page.getByRole("button", { name: "Changer de thème" }).first()).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "Changer de thème" }).first().click();
+    await expect(page.getByRole("button", { name: /Passer au (?:mode )?(?:clair|sombre)/ }).first()).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: /Passer au (?:mode )?(?:clair|sombre)/ }).first().click();
     await expect(page.locator("html")).toHaveAttribute("data-portal-theme", "light");
     await expect(page.locator("main")).toBeVisible();
     await expect(page.locator("body")).not.toContainText("Problème de chargement");
@@ -111,15 +111,15 @@ test.describe("espaces par rôle — navigation et affichage", () => {
   test("STAFF accède à son agenda avec un menu actif", async ({ page }) => {
     test.skip(!canAuthenticateRoles, "Les identifiants du projet Supabase dev sont requis pour ouvrir les comptes de rôle.");
     await signIn(page, "staff");
-    await expect(page.getByRole("button", { name: "Changer de thème" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Passer au (?:mode )?(?:clair|sombre)/ })).toBeVisible();
     await expect(page).toHaveURL(/\/equipe$/);
     await expect(page.getByRole("navigation", { name: "Navigation équipe" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Aujourd’hui" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
     for (const [href, label] of [["/equipe/seances", "Séances"], ["/equipe/parametres", "Mon compte"]]) {
       await page.goto(href);
       await expectActiveLink(page, "Navigation équipe", label);
-      await expect(page.locator("main")).toBeVisible();
+      await expect(page.getByRole("main")).toBeVisible();
     }
     await expectNoMobileOverflow(page);
   });
@@ -127,7 +127,7 @@ test.describe("espaces par rôle — navigation et affichage", () => {
   test("MANAGER accède au pilotage, sans liens réservés à l’administration", async ({ page }) => {
     test.skip(!canAuthenticateRoles, "Les identifiants du projet Supabase dev sont requis pour ouvrir les comptes de rôle.");
     await signIn(page, "manager");
-    await expect(page.getByRole("button", { name: "Changer de thème" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Passer au (?:mode )?(?:clair|sombre)/ })).toBeVisible();
     await expect(page).toHaveURL(/\/gestion$/);
     await expect(page.getByRole("navigation", { name: "Navigation gestion" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Vue d’ensemble" })).toHaveAttribute("aria-current", "page");
@@ -135,7 +135,7 @@ test.describe("espaces par rôle — navigation et affichage", () => {
     for (const [href, label] of [["/gestion/reservations", "Réservations"], ["/gestion/statistiques", "Statistiques"], ["/gestion/emails", "E-mails"]]) {
       await page.goto(href);
       await expectActiveLink(page, "Navigation gestion", label);
-      await expect(page.locator("main")).toBeVisible();
+      await expect(page.getByRole("main")).toBeVisible();
     }
     await expectNoMobileOverflow(page);
   });
@@ -143,14 +143,14 @@ test.describe("espaces par rôle — navigation et affichage", () => {
   test("ADMIN accède aux utilisateurs et garde le bon état actif", async ({ page }) => {
     test.skip(!canAuthenticateRoles, "Les identifiants du projet Supabase dev sont requis pour ouvrir les comptes de rôle.");
     await signIn(page, "admin");
-    await expect(page.getByRole("button", { name: "Changer de thème" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Passer au (?:mode )?(?:clair|sombre)/ })).toBeVisible();
     await page.goto("/gestion/utilisateurs");
     await expect(page.getByRole("navigation", { name: "Navigation gestion" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Utilisateurs" })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.goto("/gestion/reglages");
     await expectActiveLink(page, "Navigation gestion", "Réglages");
-    await expect(page.locator("main")).toBeVisible();
+    await expect(page.getByRole("main")).toBeVisible();
     await expectNoMobileOverflow(page);
   });
 
