@@ -1,0 +1,66 @@
+.logout-page {
+  --logout-red: #ed1010;
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: clamp(24px, 4.4vw, 64px) clamp(24px, 7vw, 104px) 26px;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+  color: #171717;
+  background: #f6f5f1;
+}
+.logout-page::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: min(54vw, 740px);
+  aspect-ratio: 1;
+  right: -19vw;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(20, 20, 20, .055);
+  border-radius: 50%;
+  box-shadow: 0 0 0 78px rgba(20, 20, 20, .018), 0 0 0 156px rgba(20, 20, 20, .012);
+}
+.logout-header, .logout-footer { display: flex; align-items: center; justify-content: space-between; }
+.logout-brand { display: inline-flex; align-items: center; }
+.logout-brand img { width: 132px; height: auto; object-fit: contain; }
+.logout-session { display: inline-flex; align-items: center; gap: 9px; color: #77766f; font-size: 10px; letter-spacing: .09em; text-transform: uppercase; }
+.logout-session i { width: 7px; height: 7px; border-radius: 50%; background: #71a78a; box-shadow: 0 0 0 4px rgba(113,167,138,.12); }
+.logout-content { width: min(100%, 650px); align-self: center; justify-self: center; padding: 35px 0 50px; }
+.logout-mark { width: 46px; height: 46px; display: grid; place-items: center; margin-bottom: 34px; border: 1px solid #deddd7; border-radius: 50%; color: #4c4b46; }
+.logout-mark svg { width: 20px; height: 20px; }
+.logout-eyebrow { margin-bottom: 17px; color: #88877f; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; }
+.logout-content h1 { margin: 0; color: #171717; font-size: clamp(58px, 8vw, 106px); font-weight: 500; letter-spacing: -.085em; line-height: .96; }
+.logout-content h1 span { position: relative; white-space: nowrap; }
+.logout-content h1 span::after { content: ""; position: absolute; left: .035em; right: .035em; bottom: -.11em; height: 5px; border-radius: 5px; background: var(--logout-red); transform: rotate(-1deg); }
+.logout-description { max-width: 420px; margin: 30px 0 27px; color: #77766f; font-size: 15px; line-height: 1.75; }
+.logout-action { min-height: 58px; width: min(100%, 420px); display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 22px; border: 1px solid var(--logout-red); border-radius: 3px; color: white; background: var(--logout-red); font: inherit; font-size: 13px; font-weight: 500; transition: background .2s, border-color .2s, transform .2s; }
+.logout-action:hover:not(:disabled) { border-color: #c90000; background: #c90000; transform: translateY(-2px); }
+.logout-action:disabled { opacity: .72; cursor: wait; }
+.logout-action svg { width: 19px; height: 19px; }
+.logout-error { width: min(100%, 420px); min-height: 24px; margin-top: 8px; color: #b00000; font-size: 12px; line-height: 1.5; }
+.logout-back { display: inline-flex; align-items: center; gap: 10px; margin-top: 7px; color: #686760; font-size: 12px; transition: color .2s; }
+.logout-back:hover { color: #111; }
+.logout-back span { font-size: 17px; transition: transform .2s; }
+.logout-back:hover span { transform: translateX(-3px); }
+.logout-footer { gap: 20px; padding-top: 20px; border-top: 1px solid #e5e3dd; color: #939189; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+.logout-footer span:first-child { display: inline-flex; align-items: center; gap: 9px; }
+.logout-footer i { width: 3px; height: 3px; border-radius: 50%; background: var(--logout-red); }
+.logout-footer span:last-child { letter-spacing: .03em; text-transform: none; }
+@media (max-width: 600px) {
+  .logout-page { min-height: 100svh; padding: 22px 23px 20px; }
+  .logout-page::before { width: 100vw; right: -57vw; top: 48%; }
+  .logout-brand img { width: 112px; }
+  .logout-session { font-size: 8px; letter-spacing: .07em; }
+  .logout-content { padding: 30px 0 38px; }
+  .logout-mark { width: 42px; height: 42px; margin-bottom: 29px; }
+  .logout-content h1 { font-size: clamp(56px, 15vw, 78px); }
+  .logout-description { max-width: 350px; margin: 27px 0 24px; font-size: 14px; }
+  .logout-action { min-height: 56px; }
+  .logout-footer { align-items: flex-start; flex-direction: column; gap: 7px; font-size: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .logout-action, .logout-back, .logout-back span { transition: none; }
+}

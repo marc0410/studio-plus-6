@@ -8,7 +8,7 @@ import { PortalIcon, type PortalIconName } from "@/components/PortalIcon";
 
 const links = {
   app: [
-    ["/espace", "Accueil"], ["/espace#seances", "Mes séances"], ["/reserver", "Réserver"], ["/espace/parametres", "Mon compte"],
+    ["/espace", "Accueil"], ["/espace#seances", "Mes séances"], ["/espace?view=calendar#seances", "Calendrier"], ["/reserver", "Nouvelle séance"], ["/espace/parametres", "Mon compte"],
   ],
   team: [
     ["/equipe", "Aujourd’hui"],
@@ -28,7 +28,7 @@ const links = {
 const navIcons: Record<string, PortalIconName> = {
   "Accueil": "home", "Aujourd’hui": "home", "Vue d’ensemble": "home",
   "Mes séances": "calendarTick", "Séances": "calendarTick", "Réservations": "calendarTick",
-  "Calendrier": "calendar", "Disponibilités": "clock", "Mon compte": "user", "Réserver": "add",
+  "Calendrier": "calendar", "Disponibilités": "clock", "Mon compte": "user", "Réserver": "add", "Nouvelle séance": "add",
   "Statistiques": "chart", "E-mails": "sms", "Utilisateurs": "people", "Réglages": "settings",
   "Gestion": "chart", "Espace équipe": "people",
 };
@@ -42,7 +42,7 @@ export function PortalNav({ area, admin = false }: { area: "app" | "team" | "man
   }, []);
   const items = canonicalHosts
     ? area === "app"
-      ? [["/", "Accueil"], ["/#seances", "Mes séances"], ["/reserver", "Réserver"], ["/parametres", "Mon compte"]] as const
+      ? [["/", "Accueil"], ["/#seances", "Mes séances"], ["/?view=calendar#seances", "Calendrier"], ["/reserver", "Nouvelle séance"], ["/parametres", "Mon compte"]] as const
       : area === "team"
       ? admin
         ? [["/", "Aujourd’hui"], ["/seances", "Séances"], ["/seances?view=calendar", "Calendrier"], ["/parametres", "Mon compte"]] as const
