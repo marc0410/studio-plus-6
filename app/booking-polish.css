@@ -117,3 +117,29 @@
 }
 
 @media (prefers-reduced-motion: reduce) { .booking-loader { animation: none; } }
+
+/* Booking keeps the public brand expressive while reducing the stacked-card look. */
+.booking-grid { gap: 28px; }
+.booking-panel,.booking-summary { border-radius: 8px; box-shadow: none; }
+.booking-panel { padding: clamp(24px, 3.5vw, 44px); }
+.booking-service-list { gap: 0; border-top: 1px solid rgba(255,255,255,.13); }
+.booking-service { grid-template-columns: 76px minmax(0,1fr) auto; min-height: 82px; padding: 10px 4px; border: 0; border-bottom: 1px solid rgba(255,255,255,.13); border-radius: 0; background: transparent; transition: color .16s ease, border-color .16s ease; }
+.booking-service:hover { transform: none; border-color: rgba(255,255,255,.36); background: rgba(255,255,255,.025); }
+.booking-service[aria-pressed="true"] { border-color: rgba(235,6,6,.6); background: rgba(235,6,6,.07); box-shadow: inset 2px 0 0 var(--red); }
+.booking-service img { width: 68px; height: 56px; border-radius: 3px; }
+.booking-service b { width: 23px; height: 23px; border-radius: 3px; font-size: 0; }
+.booking-service b svg { width: 15px; height: 15px; }
+.booking-form .time-grid button { border-radius: 4px; }
+.booking-steps button.active b { box-shadow: none; }
+.booking-form :is(input,textarea,select) { border-radius: 5px; }
+.booking-summary { border-top: 2px solid var(--red); }
+.booking-success,.booking-empty-state { border-radius: 8px; box-shadow: none; }
+.booking-success-details span { border-radius: 4px; }
+.booking-page .booking-icon svg,.booking-page .portal-icon svg { width: 18px; height: 18px; }
+
+@media (max-width: 760px) {
+  .booking-grid { gap: 18px; }
+  .booking-panel,.booking-summary { border-radius: 6px; }
+  .booking-panel { padding: 22px 18px; }
+  .booking-summary { padding: 20px; }
+}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Ink } from '@/components/handwriting/Ink';
 import { trackStudioEvent } from '@/lib/analytics';
+import { PortalIcon } from '@/components/PortalIcon';
 
 const services = [
   { id: 'podcast', name: 'Podcast', image: 'studio-session.webp' },
@@ -111,13 +112,13 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
 
   if (!data) {
     return <main id="contenu" className="booking-page booking-page--loading">
-      <Link className="booking-back-link" href="/">← Retour au studio</Link>
+      <Link className="booking-back-link" href="/"><PortalIcon name="arrowLeft" size={16} />Retour au studio</Link>
       <section className="booking-empty-state" aria-live="polite">
         <span className="booking-loader" aria-hidden="true" />
         <div className="eyebrow"><i />Votre prochaine séance</div>
         <h1>{loading ? 'Préparons votre séance.' : 'Le formulaire est momentanément indisponible.'}</h1>
         <p>{loading ? 'Nous chargeons les prestations et les disponibilités du studio.' : message}</p>
-        {!loading && <button className="button" type="button" onClick={() => window.location.reload()}>Réessayer ↗</button>}
+        {!loading && <button className="button" type="button" onClick={() => window.location.reload()}>Réessayer <PortalIcon name="arrowRight" size={16} /></button>}
       </section>
     </main>;
   }
@@ -135,7 +136,7 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
           <h2>Votre projet est dans la <Ink type="circle" trigger="enter" color="accent">feuille de service.</Ink></h2>
           <p>La demande est bien enregistrée. L’équipe du studio vous confirmera le créneau et le montant.</p>
           <div className="booking-success-details"><span>{configService?.name || service}</span><span>{dateLabel}</span><span>{time}</span></div>
-          <Link href="/espace" className="button" style={{ marginTop: 24 }}>Ouvrir mon espace ↗</Link>
+          <Link href="/espace" className="button" style={{ marginTop: 24 }}>Ouvrir mon espace <PortalIcon name="arrowRight" size={16} /></Link>
         </section>
       ) : (
         <div className="booking-grid">
@@ -144,22 +145,22 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
             {step === 1 && <>
               <div className="booking-step-kicker">Étape 01 / Le projet</div><h2>Quel projet préparez-vous ?</h2>
               <p className="form-hint">Choisissez la prestation que vous souhaitez réserver.</p>
-              <div className="booking-service-list">{serviceOptions.map(item => <button key={item.id} type="button" onClick={() => { setService(item.id); trackStudioEvent('booking_service_selected', { service: item.id }); }} aria-pressed={service === item.id} className="booking-service"><Image src={`/studio/assets/${item.image}`} alt="" width={128} height={112} /><span><strong>{item.name}</strong><small>{item.duration} min · {formatMoney(item.price)}</small></span><b>{service === item.id ? '✓' : '＋'}</b></button>)}</div>
-              <button className="button" type="button" onClick={() => setStep(2)}>Continuer ↗</button>
+              <div className="booking-service-list">{serviceOptions.map(item => <button key={item.id} type="button" onClick={() => { setService(item.id); trackStudioEvent('booking_service_selected', { service: item.id }); }} aria-pressed={service === item.id} className="booking-service"><Image src={`/studio/assets/${item.image}`} alt="" width={128} height={112} /><span><strong>{item.name}</strong><small>{item.duration} min · {formatMoney(item.price)}</small></span><b><PortalIcon name={service === item.id ? "tick" : "add"} size={18} /></b></button>)}</div>
+              <button className="button" type="button" onClick={() => setStep(2)}>Continuer <PortalIcon name="arrowRight" size={16} /></button>
             </>}
             {step === 2 && <>
               <div className="booking-step-kicker">Étape 02 / Le créneau</div><h2>Choisissez un créneau.</h2>
               <p className="form-hint">Les horaires affichés tiennent compte de la durée de la prestation.</p>
               <div className="form-grid"><label className="wide">Date souhaitée<input type="date" min={new Date().toISOString().slice(0, 10)} max={new Date(Date.now() + 180 * 86400000).toISOString().slice(0, 10)} value={date} onChange={event => { setDate(event.target.value); setTime(''); trackStudioEvent('booking_date_selected'); }} required /></label></div>
               {date && <div className="booking-availability"><div className="booking-availability-heading"><span>Horaires disponibles</span><small>{times.length ? `${times.length} créneau${times.length > 1 ? 'x' : ''}` : 'Complet'}</small></div><div className="time-grid" role="group" aria-label="Horaires disponibles">{times.length ? times.map(slot => <button type="button" key={slot} onClick={() => { setTime(slot); trackStudioEvent('booking_slot_selected', { service }); }} aria-pressed={time === slot}>{slot}</button>) : <p className="project-note">Aucun créneau disponible à cette date. Essayez un autre jour.</p>}</div></div>}
-              <div className="quiz-controls"><button className="button ghost" type="button" onClick={() => setStep(1)}>← Retour</button><button className="button" type="button" disabled={!date || !time} onClick={() => setStep(3)}>Continuer ↗</button></div>
+              <div className="quiz-controls"><button className="button ghost" type="button" onClick={() => setStep(1)}><PortalIcon name="arrowLeft" size={16} />Retour</button><button className="button" type="button" disabled={!date || !time} onClick={() => setStep(3)}>Continuer <PortalIcon name="arrowRight" size={16} /></button></div>
             </>}
             {step === 3 && <>
               {!data?.me ? <>
                 <div className="booking-step-kicker">Étape 03 / Votre accès</div><h2>Connectez-vous pour continuer.</h2>
                 <p className="form-hint">La demande est enregistrée dans votre espace Studio+. Votre projet et votre créneau seront conservés après connexion.</p>
-                <Link className="button" href={`/connexion?return_to=${encodeURIComponent(returnPath)}`}>Se connecter ↗</Link>
-                <div><button className="button ghost" type="button" onClick={() => setStep(2)}>← Modifier le créneau</button></div>
+                <Link className="button" href={`/connexion?return_to=${encodeURIComponent(returnPath)}`}>Se connecter <PortalIcon name="arrowRight" size={16} /></Link>
+                <div><button className="button ghost" type="button" onClick={() => setStep(2)}><PortalIcon name="arrowLeft" size={16} />Modifier le créneau</button></div>
               </> : <>
                 <div className="booking-step-kicker">Étape 03 / Vos coordonnées</div><h2>Comment vous joindre ?</h2>
                 <div className="form-grid">
@@ -169,7 +170,7 @@ export function BookingWizard({ initialService, initialDate, initialTime }: { in
                   <label>Titre de la séance<input required minLength={2} maxLength={150} value={fields.title} onChange={event => setFields({ ...fields, title: event.target.value })} /></label>
                   <label className="wide">Quelques détails<textarea rows={4} maxLength={3000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} /></label>
                 </div>
-                <div className="quiz-controls"><button className="button ghost" type="button" onClick={() => setStep(2)}>← Retour</button><button className="button" type="submit" disabled={busy}>{busy ? 'Envoi…' : 'Envoyer ma demande ↗'}</button></div>
+                <div className="quiz-controls"><button className="button ghost" type="button" onClick={() => setStep(2)}><PortalIcon name="arrowLeft" size={16} />Retour</button><button className="button" type="submit" disabled={busy}>{busy ? 'Envoi…' : 'Envoyer ma demande'} <PortalIcon name="arrowRight" size={16} /></button></div>
               </>}
             </>}
             {message && <p role="status" className="status">{message}</p>}

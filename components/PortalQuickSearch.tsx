@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { spaceOrigin } from "@/lib/hosts";
 import type { AppRole } from "@/lib/roles";
+import { PortalIcon } from "@/components/PortalIcon";
 
 type Area = "app" | "team" | "management";
 type Command = { label: string; hint?: string; href: string };
@@ -41,9 +42,9 @@ export function PortalQuickSearch({ area, role }: { area: Area; role: AppRole })
   ];
   const filtered = useMemo(() => commands.filter(item => item.label.toLocaleLowerCase("fr-FR").includes(query.trim().toLocaleLowerCase("fr-FR"))), [commands, query]);
   return <>
-    <button className="portal-search-trigger" type="button" onClick={openDialog} aria-label="Rechercher une page ou une action"><span>⌕</span><span>Rechercher…</span><kbd>⌘ K</kbd></button>
+    <button className="portal-search-trigger" type="button" onClick={openDialog} aria-label="Rechercher une page ou une action"><PortalIcon name="search" size={17} /><span>Rechercher…</span><kbd>⌘ K</kbd></button>
     <dialog className="portal-search-dialog" ref={dialog} onClick={event => { if (event.target === dialog.current) dialog.current?.close(); }}>
-      <div className="portal-search-box"><label htmlFor="portal-search-input">Rechercher une page ou une action</label><input id="portal-search-input" ref={input} value={query} onChange={event => setQuery(event.target.value)} placeholder="Que souhaitez-vous ouvrir ?" /><div className="portal-search-results">{filtered.length ? filtered.map(command => <Link key={command.label} href={command.href} onClick={() => dialog.current?.close()}><span>{command.label}</span><small>Ouvrir ↗</small></Link>) : <p>Aucune page ou action trouvée.</p>}</div><footer><span>Tab Parcourir</span><span>Échap Fermer</span></footer></div>
+      <div className="portal-search-box"><label htmlFor="portal-search-input">Rechercher une page ou une action</label><input id="portal-search-input" ref={input} value={query} onChange={event => setQuery(event.target.value)} placeholder="Que souhaitez-vous ouvrir ?" /><div className="portal-search-results">{filtered.length ? filtered.map(command => <Link key={command.label} href={command.href} onClick={() => dialog.current?.close()}><span>{command.label}</span><small>Ouvrir <PortalIcon name="external" size={13} /></small></Link>) : <p>Aucune page ou action trouvée.</p>}</div><footer><span>Tab Parcourir</span><span>Échap Fermer</span></footer></div>
     </dialog>
   </>;
 }

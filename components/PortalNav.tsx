@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { spaceOrigin } from "@/lib/hosts";
+import { PortalIcon, type PortalIconName } from "@/components/PortalIcon";
 
 const links = {
   app: [
@@ -23,6 +24,14 @@ const links = {
     ["/gestion/emails", "E-mails"],
   ],
 } as const;
+
+const navIcons: Record<string, PortalIconName> = {
+  "Accueil": "home", "Aujourd’hui": "home", "Vue d’ensemble": "home",
+  "Mes séances": "calendarTick", "Séances": "calendarTick", "Réservations": "calendarTick",
+  "Calendrier": "calendar", "Disponibilités": "clock", "Mon compte": "user", "Réserver": "add",
+  "Statistiques": "chart", "E-mails": "sms", "Utilisateurs": "people", "Réglages": "settings",
+  "Gestion": "chart", "Espace équipe": "people",
+};
 
 export function PortalNav({ area, admin = false }: { area: "app" | "team" | "management"; admin?: boolean }) {
   const pathname = usePathname();
@@ -56,7 +65,7 @@ export function PortalNav({ area, admin = false }: { area: "app" | "team" | "man
         ? pathname === homePath || (canonicalHosts && pathname === (area === "app" ? "/espace" : area === "team" ? "/equipe" : "/gestion"))
         : isCalendarView ? pathname === targetPath && viewMatches : pathname === targetPath && viewMatches || pathname.startsWith(`${targetPath}/`);
       const key = label.toLocaleLowerCase("fr-FR").replaceAll("’", "").replaceAll(" ", "-");
-      return <Link key={href} href={href} aria-label={label} title={label} data-nav-index={index} data-nav-key={key} aria-current={active ? "page" : undefined} className={active ? "is-active" : undefined}>{label}</Link>;
+      return <Link key={href} href={href} aria-label={label} title={label} data-nav-index={index} data-nav-key={key} aria-current={active ? "page" : undefined} className={active ? "is-active" : undefined}><span className="portal-nav-icon"><PortalIcon name={navIcons[label] ?? "home"} size={19} /></span><span className="portal-nav-label">{label}</span></Link>;
     })}
   </nav>;
 }
