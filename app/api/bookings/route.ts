@@ -7,6 +7,7 @@ import { ROLE_HOME } from "@/lib/roles";
 import { safelySendStudioEmail } from "@/lib/email";
 import { spaceOrigin } from "@/lib/hosts";
 import { expirePendingBookings } from "@/lib/booking-expiration";
+import { PODCAST_DECORS, getDeposit, getFormulaDecorOptions, getPlan, getPlanDepositWording } from "@/data/pricing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,8 +80,43 @@ export async function POST(request: Request) {
   try {
     await expirePendingBookings();
     const config = await readConfig();
-    const input = { ...body, name: profile.fullName, email: profile.email };
-    const service = validateBooking(input, config);
+    const formulaId = typeof body.formule === "string" ? body.formule : "";
+    const formula = formulaId ? getPlan(formulaId) : undefined;
+    if (formulaId && !formula) return json({ error: "Choisissez une formule valide." }, 400);
+    let selectedDecorName = "";
+    let participantCount: number | null = null;
+    let bookingConfig = config;
+    let bookingServiceId = typeof body.service === "string" ? body.service : "";
+    if (formula) {
+      participantCount = Number(body.intervenants);
+      if (!Number.isInteger(participantCount) || participantCount < formula.participantsMin || participantCount > formula.participantsMax) {
+        return json({ error: "Choisissez un nombre d’intervenants valide pour cette formule." }, 400);
+      }
+      if (formula.decorMode === "standard") {
+        selectedDecorName = "Décor standard inclus";
+        if (body.decor && body.decor !== "standard") return json({ error: "Cette formule comprend un décor standard non modifiable." }, 400);
+      } else {
+        const decor = PODCAST_DECORS.find(item => item.id === body.decor && item.category === formula.category);
+        if (!decor || !getFormulaDecorOptions(formula).some(item => item.id === decor.id)) return json({ error: "Choisissez un décor valide pour cette formule." }, 400);
+        selectedDecorName = decor.name;
+      }
+      bookingServiceId = formula.id;
+      bookingConfig = {
+        ...config,
+        services: [...config.services, {
+          id: formula.id,
+          name: formula.name,
+          tag: formula.category === "duo" ? "Podcast à deux ou plus" : "Podcast solo",
+          duration: formula.durationMax,
+          price: formula.price,
+          description: formula.features.join(" · "),
+          image: "studio-session.webp",
+          color: "#eb0606",
+        }],
+      };
+    }
+    const input = { ...body, service: bookingServiceId, name: profile.fullName, email: profile.email };
+    const service = validateBooking(input, bookingConfig);
     if (await prisma.booking.count({ where: { ownerId: profile.id, status: "REQUESTED" } }) >= 12) return json({ error: "Vous avez déjà 12 demandes en attente. Contactez le studio." }, 409);
     const date = String(body.date);
     const time = String(body.time);
@@ -88,7 +124,9 @@ export async function POST(request: Request) {
     try {
       await prisma.$transaction(async tx => {
         await tx.service.upsert({ where: { id: service.id }, create: { id: service.id, name: service.name, duration: service.duration, price: service.price, image: service.image }, update: { name: service.name, duration: service.duration, price: service.price, image: service.image } });
-        await tx.booking.create({ data: { id, ownerId: profile.id, serviceId: service.id, title: String(body.title).trim(), date, time, duration: service.duration, amount: service.price, name: profile.fullName, email: profile.email, phone: String(body.phone).trim(), notes: typeof body.notes === "string" ? body.notes.trim() : "", expiresAt: new Date(Date.now() + Math.min(168, Math.max(24, Number(process.env.BOOKING_REQUEST_TTL_HOURS) || 48)) * 3600000), slots: { create: slotTimes(time, service.duration).map(slot => ({ date, time: slot })) } } });
+        const notes = [typeof body.notes === "string" ? body.notes.trim() : ""];
+        if (formula) notes.push(`Formule: ${formula.name}`, `Décor: ${selectedDecorName}`, `Intervenants: ${participantCount}`, `Avance à prévoir: ${getDeposit(formula)} Frs`, `Modalités: ${getPlanDepositWording(formula)}`);
+        await tx.booking.create({ data: { id, ownerId: profile.id, serviceId: service.id, title: String(body.title).trim(), date, time, duration: service.duration, amount: service.price, name: profile.fullName, email: profile.email, phone: String(body.phone).trim(), notes: notes.filter(Boolean).join("\n"), expiresAt: new Date(Date.now() + Math.min(168, Math.max(24, Number(process.env.BOOKING_REQUEST_TTL_HOURS) || 48)) * 3600000), slots: { create: slotTimes(time, service.duration).map(slot => ({ date, time: slot })) } } });
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2002", "P2034"].includes(error.code)) return json({ error: "Ce créneau vient d’être pris. Choisissez-en un autre." }, 409);
@@ -97,7 +135,7 @@ export async function POST(request: Request) {
     const appOrigin = spaceOrigin("app");
     const adminOrigin = spaceOrigin("admin");
     await Promise.all([
-      safelySendStudioEmail({ to: profile.email, subject: "Votre demande de séance est bien reçue", title: "Votre demande est arrivée au studio.", body: `${service.name} · ${date} à ${time}. L’équipe vous confirmera le créneau et le montant. Aucun paiement en ligne n’est demandé.`, actionLabel: "Ouvrir mon espace", actionUrl: `${appOrigin}/`, event: "BOOKING_REQUESTED_CLIENT" }),
+      safelySendStudioEmail({ to: profile.email, subject: "Votre demande de séance est bien reçue", title: "Votre demande est arrivée au studio.", body: `${service.name} · ${date} à ${time}.${formula ? ` ${selectedDecorName} · ${participantCount} intervenant(s) · avance à prévoir ${getDeposit(formula)} Frs.` : " L’équipe vous confirmera le créneau et le montant."} Aucun paiement en ligne n’est demandé.`, actionLabel: "Ouvrir mon espace", actionUrl: `${appOrigin}/`, event: "BOOKING_REQUESTED_CLIENT" }),
       process.env.STUDIO_BOOKING_EMAIL ? safelySendStudioEmail({ to: process.env.STUDIO_BOOKING_EMAIL, subject: "Nouvelle demande de réservation", title: "Une nouvelle demande attend votre réponse.", body: `${profile.fullName} · ${service.name} · ${date} à ${time}.`, actionLabel: "Ouvrir la gestion", actionUrl: `${adminOrigin}/reservations`, event: "BOOKING_REQUESTED_STUDIO" }) : Promise.resolve(false),
     ]);
     return json({ id, message: "Votre demande est enregistrée. Le studio doit encore confirmer la séance et le tarif." }, 201);

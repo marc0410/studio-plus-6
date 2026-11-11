@@ -1,5 +1,5 @@
 export type StudioService = {
-  id: 'podcast' | 'photo' | 'video';
+  id: string;
   name: string;
   tag: string;
   duration: number;
